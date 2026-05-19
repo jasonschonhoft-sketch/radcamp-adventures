@@ -93,15 +93,17 @@ export default function App() {
   const [singletrackOnly, setSingletrackOnly] = useState(false);
   const mapRef = useRef(null);
 
-  function toggleFilter(activity) {
+  const toggleFilter = useCallback((activity) => {
     setActiveFilters(prev => ({ ...prev, [activity]: !prev[activity] }));
-  }
+  }, []);
 
   function handleModalSelect(activity) {
     localStorage.setItem('radcamp_activity', activity ?? 'all');
     setActiveFilters(makeFilters(activity));
     setModalVisible(false);
   }
+
+  const handleToggleSingletrack = useCallback(() => setSingletrackOnly(v => !v), []);
 
   const handleMapReady = useCallback((map) => {
     mapRef.current = map;
@@ -158,7 +160,7 @@ export default function App() {
             activeFilters={activeFilters}
             onToggle={toggleFilter}
             singletrackOnly={singletrackOnly}
-            onToggleSingletrack={() => setSingletrackOnly(v => !v)}
+            onToggleSingletrack={handleToggleSingletrack}
             mapRef={mapRef}
           />
           <TrailMap activeFilters={activeFilters} singletrackOnly={singletrackOnly} onMapReady={handleMapReady} />
