@@ -70,8 +70,8 @@ function getTrailStyle(activity, props) {
   const surface = (props.surface || '').toLowerCase();
 
   // Moto singletrack = dashed bright red
-  if (activity === 'dirt_bike' && isTrail) {
-    return { color: '#ef4444', weight: 2.5, opacity: 0, dashed: true };
+  if (isTrail && surface === 'dirt') {
+    return { color: '#22c55e', weight: 2, opacity: 0, dotted: true };
   }
   // Moto doubletrack/road = solid lighter red
   if (activity === 'dirt_bike' && isRoad) {
@@ -187,7 +187,10 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange }) {
           if (!style) return;
           const visible = !!activeFiltersRef.current[activity];
 
-          const dashedIcon = style.dashed ? [{
+          const dashedIcon = style.dotted ? [{
+            icon: { path: google.maps.SymbolPath.CIRCLE, fillOpacity: 1, fillColor: style.color, strokeOpacity: 0, scale: 2 },
+            offset: '0', repeat: '8px',
+          }] : style.dashed ? [{
             icon: { path: 'M 0,-1 0,1', strokeOpacity: 0.9, scale: 3 },
             offset: '0', repeat: '12px',
           }] : undefined;
