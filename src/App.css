@@ -569,8 +569,9 @@ html, body, #root {
   display: block;
 }
 .welcome-logo {
-  height: 320px;
+  height: 260px;
   width: auto;
   display: block;
-  margin: 0 auto 8px;
+  margin: -40px auto -50px;
+  clip-path: inset(10% 5% 5% 5%);
 }
