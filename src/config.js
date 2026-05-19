@@ -4,6 +4,9 @@ export const COTREX_URL =
 // Surfaces considered "paved" — used to split bike vs bike_path
 export const PAVED_SURFACES = new Set(['paved', 'concrete', 'boardwalk']);
 
+// Surfaces considered "gravel/unpaved" — used to identify gravel bike routes
+export const GRAVEL_SURFACES = new Set(['gravel', 'unpaved', 'compacted', 'fine_gravel', 'dirt_road']);
+
 export const ACTIVITY_CONFIG = {
   hiking: {
     label: 'Hiking',
@@ -26,6 +29,18 @@ export const ACTIVITY_CONFIG = {
     color: '#00E5FF',
     weight: 2.5,
     note: 'Paved surfaces only',
+  },
+  road_bike: {
+    label: 'Road Bike',
+    color: '#ef4444',
+    weight: 2,
+    note: 'Paved surfaces only',
+  },
+  gravel_bike: {
+    label: 'Gravel Bike',
+    color: '#f59e0b',
+    weight: 2,
+    note: 'Gravel and unpaved surfaces',
   },
   motorcycle: {
     label: 'Dirt Bike',

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Map, useMap } from '@vis.gl/react-google-maps';
-import { ACTIVITY_CONFIG, ACTIVITY_KEYS, COTREX_URL, PAVED_SURFACES } from '../config';
+import { ACTIVITY_CONFIG, ACTIVITY_KEYS, COTREX_URL, PAVED_SURFACES, GRAVEL_SURFACES } from '../config';
 import { renderIconHtml } from '../icons';
 
 const COLORADO_CENTER = { lat: 39.0, lng: -105.5 };
@@ -9,17 +9,22 @@ const MAX_RECORDS = 2000;
 
 function getTrailActivities(props) {
   const acts = [];
-  const isPaved = PAVED_SURFACES.has((props.surface || '').toLowerCase());
+  const surface = (props.surface || '').toLowerCase();
+  const isPaved = PAVED_SURFACES.has(surface);
+  const isGravel = GRAVEL_SURFACES.has(surface);
 
   if (props.hiking === 'yes') acts.push('hiking');
 
   if (props.bike === 'yes') {
-    // e-bike: all bike-permitted trails (superset)
     acts.push('ebike');
-    // mountain bike: off-road only
-    if (!isPaved) acts.push('bike');
-    // bike path: paved only
-    if (isPaved) acts.push('bike_path');
+    if (isPaved) {
+      acts.push('bike_path');
+      acts.push('road_bike');
+    } else if (isGravel) {
+      acts.push('gravel_bike');
+    } else {
+      acts.push('bike');
+    }
   }
 
   if (props.motorcycle === 'yes') {
