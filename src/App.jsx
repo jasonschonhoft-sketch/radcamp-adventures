@@ -89,6 +89,7 @@ function WelcomeModal({ onSelect }) {
 export default function App() {
   const [activeFilters, setActiveFilters] = useState(() => makeFilters(startActivity));
   const [modalVisible, setModalVisible] = useState(showModal);
+  const [singletrackOnly, setSingletrackOnly] = useState(false);
   const mapRef = useRef(null);
 
   function toggleFilter(activity) {
@@ -155,9 +156,11 @@ export default function App() {
           <FloatingControls
             activeFilters={activeFilters}
             onToggle={toggleFilter}
+            singletrackOnly={singletrackOnly}
+            onToggleSingletrack={() => setSingletrackOnly(v => !v)}
             mapRef={mapRef}
           />
-          <TrailMap activeFilters={activeFilters} onMapReady={handleMapReady} />
+          <TrailMap activeFilters={activeFilters} singletrackOnly={singletrackOnly} onMapReady={handleMapReady} />
         </main>
       </div>
     </APIProvider>

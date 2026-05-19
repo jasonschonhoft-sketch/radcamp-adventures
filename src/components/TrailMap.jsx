@@ -95,14 +95,16 @@ async function fetchTrailsInBounds(bounds) {
   };
 }
 
-function TrailLayer({ activeFilters, onStatusChange }) {
+function TrailLayer({ activeFilters, singletrackOnly, onStatusChange }) {
   const map = useMap();
   const polylinesRef = useRef({});
   const activeFiltersRef = useRef(activeFilters);
+  const singletrackOnlyRef = useRef(singletrackOnly);
   const debounceRef = useRef(null);
 
   useEffect(() => {
     activeFiltersRef.current = activeFilters;
+    singletrackOnlyRef.current = singletrackOnly;
   });
 
   // Update polyline visibility when filters change (no re-fetch needed)
@@ -110,11 +112,14 @@ function TrailLayer({ activeFilters, onStatusChange }) {
     if (!map) return;
     ACTIVITY_KEYS.forEach(activity => {
       const visible = !!activeFilters[activity];
-      (polylinesRef.current[activity] || []).forEach(p =>
-        p.setMap(visible ? map : null)
-      );
+      (polylinesRef.current[activity] || []).forEach(p => {
+        const show = visible && (
+          activity !== 'mountain_bike' || !singletrackOnly || p.__singletrack
+        );
+        p.setMap(show ? map : null);
+      });
     });
-  }, [activeFilters, map]);
+  }, [activeFilters, singletrackOnly, map]);
 
   const loadTrails = useCallback(async () => {
     if (!map) return;
@@ -176,15 +181,19 @@ function TrailLayer({ activeFilters, onStatusChange }) {
           const visible = !!activeFiltersRef.current[activity];
 
           coordSets.forEach(coords => {
+            const showPolyline = visible && (
+              activity !== 'mountain_bike' || !singletrackOnlyRef.current || singletrack
+            );
             const polyline = new google.maps.Polyline({
               path: coords.map(([lng, lat]) => ({ lat, lng })),
               strokeColor: cfg.color,
               strokeOpacity: singletrack ? 0 : 0.9,
               strokeWeight: cfg.weight,
               icons: dashedIcon,
-              map: visible ? map : null,
+              map: showPolyline ? map : null,
               clickable: true,
             });
+            polyline.__singletrack = singletrack;
 
             polyline.addListener('click', e => {
               const acts = getTrailActivities(properties).filter(a => ACTIVITY_CONFIG[a]);
@@ -244,7 +253,7 @@ function TrailLayer({ activeFilters, onStatusChange }) {
   return null;
 }
 
-export default function TrailMap({ activeFilters, onMapReady }) {
+export default function TrailMap({ activeFilters, singletrackOnly, onMapReady }) {
   const [status, setStatus] = useState({ type: 'idle' });
 
   return (
@@ -259,7 +268,7 @@ export default function TrailMap({ activeFilters, onMapReady }) {
         streetViewControl={false}
       >
         {onMapReady && <MapController onMapReady={onMapReady} />}
-        <TrailLayer activeFilters={activeFilters} onStatusChange={setStatus} />
+        <TrailLayer activeFilters={activeFilters} singletrackOnly={singletrackOnly} onStatusChange={setStatus} />
       </Map>
 
       <div className="map-status">

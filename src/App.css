@@ -264,6 +264,11 @@ html, body, #root {
 
 .fc-check { color: rgba(255,255,255,0.45); flex-shrink: 0; }
 
+.fc-sub-toggle { padding-left: 28px; }
+.fc-sub-toggle .fc-label { color: rgba(255,255,255,0.4); font-size: 12px; }
+.fc-sub-toggle.active .fc-label { color: rgba(255,255,255,0.75); }
+.fc-sub-dash { font-size: 11px; color: rgba(255,255,255,0.2); flex-shrink: 0; width: 7px; }
+
 /* ── API key error ───────────────────────────────────────────── */
 .api-key-error { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg-dark); padding: 24px; }
 .api-key-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 40px; max-width: 480px; width: 100%; }
