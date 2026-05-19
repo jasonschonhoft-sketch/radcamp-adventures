@@ -473,3 +473,22 @@ html, body, #root {
   .search-bar { max-width: 160px; }
   .search-input::placeholder { font-size: 12px; }
 }
+
+/* Filter button active badge (mobile) */
+.fc-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  pointer-events: none;
+}

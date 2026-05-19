@@ -202,10 +202,16 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
           className={`fc-btn fc-mobile-only${mobileOpen ? ' fc-btn-on' : ''}${!anyOn ? ' fc-btn-dim' : ''}`}
           onClick={() => setMobileOpen(o => !o)}
           aria-label="Trail filters"
+          style={{ position: 'relative' }}
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
           </svg>
+          {anyOn && !allOn && (
+            <span className="fc-badge">
+              {DISPLAY_KEYS.filter(k => activeFilters[k]).length}
+            </span>
+          )}
         </button>
       </div>
 
