@@ -142,14 +142,14 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
 
   useEffect(() => () => clearCampMarkers(), []);
 
-  async function handleCamp() {
+  function handleCamp() {
     if (campActive) { clearCampMarkers(); setCampActive(false); return; }
     if (!placesLib || !mapRef.current) return;
     setCampLoading(true);
     const map = mapRef.current;
     const center = map.getCenter();
     const service = new placesLib.PlacesService(map);
-    const queries = ['campground', 'rv park camping', 'dispersed camping'];
+    const queries = ['campground', 'rv park', 'camping'];
     let pending = queries.length;
     const all = [];
 
@@ -157,72 +157,32 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
       service.textSearch({ location: center, radius: 80467, query }, (results, status) => {
         if (status === placesLib.PlacesServiceStatus.OK && results) all.push(...results.slice(0, 8));
         if (--pending === 0) {
-          // Also fetch iOverlander data
-          const lat = center.lat();
-          const lng = center.lng();
-          fetch(`https://www.ioverlander.com/places/search?lat=${lat}&lng=${lng}&radius=100&format=json`)
-            .then(r => r.json())
-            .then(idata => {
-              const iPlaces = Array.isArray(idata) ? idata : (idata.places || []);
-              setCampLoading(false);
-              setCampActive(true);
-              const seen = new Set();
-
-              // Google Places campgrounds
-              all.forEach(place => {
-                if (seen.has(place.place_id) || !place.geometry?.location) return;
-                seen.add(place.place_id);
-                const marker = new google.maps.Marker({
-                  position: place.geometry.location,
-                  map,
-                  icon: { path: google.maps.SymbolPath.CIRCLE, scale: 9, fillColor: '#22c55e', fillOpacity: 0.92, strokeColor: '#fff', strokeWeight: 2 },
-                  title: place.name,
-                  zIndex: 200,
-                });
-                marker.addListener('click', () => {
-                  new google.maps.InfoWindow({
-                    content: `<div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;padding:12px 14px;min-width:180px;max-width:260px;background:#0f1117">
-                      <div style="font-size:13px;font-weight:700;color:#e8edf5;margin-bottom:4px">${place.name}</div>
-                      <div style="font-size:11px;color:#8a9bb0;line-height:1.4;margin-bottom:6px">${place.vicinity || ''}</div>
-                      ${place.rating ? `<div style="font-size:11px;color:#22c55e;margin-bottom:6px">${place.rating}★ ${place.user_ratings_total ? `(${place.user_ratings_total})` : ''}</div>` : ''}
-                      ${place.opening_hours ? `<div style="font-size:11px;color:#8a9bb0;margin-bottom:6px">${place.opening_hours.isOpen() ? '✓ Open now' : 'Closed'}</div>` : ''}
-                      <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name)}&query_place_id=${place.place_id}" target="_blank" style="font-size:11px;color:#22c55e;text-decoration:none">View on Google Maps →</a>
-                    </div>`,
-                  }).open(map, marker);
-                });
-                campMarkersRef.current.push(marker);
-              });
-
-              // iOverlander spots
-              iPlaces.slice(0, 30).forEach(spot => {
-                if (!spot.latitude || !spot.longitude) return;
-                const pos = { lat: parseFloat(spot.latitude), lng: parseFloat(spot.longitude) };
-                const marker = new google.maps.Marker({
-                  position: pos,
-                  map,
-                  icon: { path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: '#f59e0b', fillOpacity: 0.92, strokeColor: '#fff', strokeWeight: 2 },
-                  title: spot.name || 'iOverlander Spot',
-                  zIndex: 200,
-                });
-                marker.addListener('click', () => {
-                  new google.maps.InfoWindow({
-                    content: `<div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;padding:12px 14px;min-width:180px;max-width:260px">
-                      <div style="font-size:10px;font-weight:600;color:#f59e0b;letter-spacing:0.5px;margin-bottom:4px">iOVERLANDER</div>
-                      <div style="font-size:13px;font-weight:700;color:#e8edf5;margin-bottom:4px">${spot.name || 'Unnamed Spot'}</div>
-                      ${spot.category_name ? `<div style="font-size:11px;color:#8a9bb0;margin-bottom:4px">${spot.category_name}</div>` : ''}
-                      ${spot.description ? `<div style="font-size:11px;color:#8a9bb0;line-height:1.4;margin-bottom:6px">${spot.description.slice(0, 100)}${spot.description.length > 100 ? '...' : ''}</div>` : ''}
-                      <a href="https://www.ioverlander.com/places/${spot.id}" target="_blank" style="font-size:11px;color:#f59e0b;text-decoration:none">View on iOverlander →</a>
-                    </div>`,
-                  }).open(map, marker);
-                });
-                campMarkersRef.current.push(marker);
-              });
-            })
-            .catch(() => {
-              // iOverlander failed, still show Google results
-              setCampLoading(false);
-              setCampActive(true);
+          setCampLoading(false);
+          if (all.length === 0) return;
+          setCampActive(true);
+          const seen = new Set();
+          all.forEach(place => {
+            if (seen.has(place.place_id) || !place.geometry?.location) return;
+            seen.add(place.place_id);
+            const marker = new google.maps.Marker({
+              position: place.geometry.location,
+              map,
+              icon: { path: google.maps.SymbolPath.CIRCLE, scale: 9, fillColor: '#22c55e', fillOpacity: 0.92, strokeColor: '#fff', strokeWeight: 2 },
+              title: place.name,
+              zIndex: 200,
             });
+            marker.addListener('click', () => {
+              new google.maps.InfoWindow({
+                content: `<div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;padding:12px 14px;min-width:180px;max-width:260px">
+                  <div style="font-size:13px;font-weight:700;color:#e8edf5;margin-bottom:4px">${place.name}</div>
+                  <div style="font-size:11px;color:#8a9bb0;line-height:1.4;margin-bottom:6px">${place.vicinity || ''}</div>
+                  ${place.rating ? `<div style="font-size:11px;color:#22c55e;margin-bottom:6px">${place.rating}★ ${place.user_ratings_total ? ' (' + place.user_ratings_total + ' reviews)' : ''}</div>` : ''}
+                  <a href="https://www.google.com/maps/place/?q=place_id:${place.place_id}" target="_blank" style="font-size:11px;color:#22c55e;text-decoration:none">View &amp; Book →</a>
+                </div>`,
+              }).open(map, marker);
+            });
+            campMarkersRef.current.push(marker);
+          });
         }
       });
     });
