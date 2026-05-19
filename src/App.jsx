@@ -41,11 +41,11 @@ const showModal = startActivity === null;
 
 const MODAL_ACTIVITIES = [
   { key: 'dirt_bike', desc: '' },
-  { key: 'ohv', desc: '' },
   { key: 'edirt_bike', desc: '' },
+  { key: 'ohv', desc: '' },
   { key: 'snowmobile', desc: '' },
-  { key: 'mountain_bike', desc: '' },
   { key: 'ebike', desc: '' },
+  { key: 'mountain_bike', desc: '' },
   { key: 'gravel_bike', desc: '' },
   { key: 'road_bike', desc: '' },
   { key: 'hiking', desc: '' },
