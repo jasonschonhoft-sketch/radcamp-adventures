@@ -23,24 +23,20 @@ const SECTION_LABELS = {
 const SHOP_QUERIES = ['bicycle shop', 'motorcycle shop', 'snowmobile dealer'];
 
 export default function FloatingControls({ activeFilters, onToggle, singletrackOnly, onToggleSingletrack, mapRef }) {
-  const [filterOpen, setFilterOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [locating, setLocating] = useState(false);
   const [shopsActive, setShopsActive] = useState(false);
   const [shopsLoading, setShopsLoading] = useState(false);
   const shopMarkersRef = useRef([]);
-  const dropdownRef = useRef(null);
+  const sidebarRef = useRef(null);
   const placesLib = useMapsLibrary('places');
 
   useEffect(() => {
-    if (!filterOpen) return;
-    function onDown(e) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setFilterOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
-  }, [filterOpen]);
+    if (!mobileOpen) return;
+    function onKey(e) { if (e.key === 'Escape') setMobileOpen(false); }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [mobileOpen]);
 
   function handleLocate() {
     if (!navigator.geolocation) return;
@@ -65,11 +61,7 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
   useEffect(() => () => clearShopMarkers(), []);
 
   function handleShops() {
-    if (shopsActive) {
-      clearShopMarkers();
-      setShopsActive(false);
-      return;
-    }
+    if (shopsActive) { clearShopMarkers(); setShopsActive(false); return; }
     if (!placesLib || !mapRef.current) return;
     setShopsLoading(true);
     const map = mapRef.current;
@@ -77,12 +69,9 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
     const service = new placesLib.PlacesService(map);
     let pending = SHOP_QUERIES.length;
     const all = [];
-
     SHOP_QUERIES.forEach(query => {
       service.textSearch({ location: center, radius: 80467, query }, (results, status) => {
-        if (status === placesLib.PlacesServiceStatus.OK && results) {
-          all.push(...results.slice(0, 5));
-        }
+        if (status === placesLib.PlacesServiceStatus.OK && results) all.push(...results.slice(0, 5));
         if (--pending === 0) {
           setShopsLoading(false);
           if (all.length === 0) return;
@@ -94,14 +83,7 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
             const marker = new google.maps.Marker({
               position: place.geometry.location,
               map,
-              icon: {
-                path: google.maps.SymbolPath.CIRCLE,
-                scale: 8,
-                fillColor: '#e67e22',
-                fillOpacity: 0.92,
-                strokeColor: '#fff',
-                strokeWeight: 2,
-              },
+              icon: { path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: '#e67e22', fillOpacity: 0.92, strokeColor: '#fff', strokeWeight: 2 },
               title: place.name,
               zIndex: 200,
             });
@@ -130,107 +112,111 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
   const allOn = DISPLAY_KEYS.every(k => activeFilters[k]);
   const anyOn = DISPLAY_KEYS.some(k => activeFilters[k]);
 
+  const sidebarContent = (
+    <>
+      <div className="fc-sidebar-header">
+        <span className="fc-sidebar-title">Trail Types</span>
+        <button className="fc-sidebar-close fc-mobile-only" onClick={() => setMobileOpen(false)} aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+            <line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/>
+          </svg>
+        </button>
+      </div>
+      <div className="fc-sidebar-actions">
+        <button className="fc-toggle-all" onClick={toggleAll}>{allOn ? 'Hide All' : 'Show All'}</button>
+      </div>
+      <div className="fc-list">
+        {DISPLAY_KEYS.map(key => {
+          const cfg = ACTIVITY_CONFIG[key];
+          if (!cfg) return null;
+          const active = !!activeFilters[key];
+          const section = SECTION_LABELS[key];
+          return (
+            <div key={key}>
+              {section && <div className="fc-section">{section}</div>}
+              <button
+                className={`fc-item${active ? ' active' : ''}`}
+                style={{ '--dot': cfg.color }}
+                onClick={() => onToggle(key)}
+              >
+                <span className="fc-dot" />
+                <span className="fc-label">{cfg.label}</span>
+                {active && (
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" className="fc-check">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                )}
+              </button>
+              {key === 'ebike' && (
+                <button className={`fc-item fc-sub-toggle${singletrackOnly ? ' active' : ''}`} onClick={onToggleSingletrack}>
+                  <span className="fc-sub-dash">–</span>
+                  <span className="fc-label">Singletrack Only</span>
+                  {singletrackOnly && (
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" className="fc-check">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  )}
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+
   return (
-    <div className="floating-controls">
+    <>
+      {/* Desktop: permanent sidebar */}
+      <aside ref={sidebarRef} className="fc-sidebar fc-sidebar-desktop">
+        {sidebarContent}
+      </aside>
 
-      {/* Locate Me */}
-      <button
-        className={`fc-btn${locating ? ' fc-btn-spin' : ''}`}
-        onClick={handleLocate}
-        aria-label="Locate me"
-        title="Center on my location"
-      >
-        {locating ? (
-          <span className="fc-spinner" />
-        ) : (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <circle cx="12" cy="12" r="3"/>
-            <line x1="12" y1="2" x2="12" y2="6"/>
-            <line x1="12" y1="18" x2="12" y2="22"/>
-            <line x1="2" y1="12" x2="6" y2="12"/>
-            <line x1="18" y1="12" x2="22" y2="12"/>
-          </svg>
-        )}
-      </button>
+      {/* Floating buttons (locate + shops + mobile filter toggle) */}
+      <div className="floating-controls">
+        <button className={`fc-btn${locating ? ' fc-btn-spin' : ''}`} onClick={handleLocate} aria-label="Locate me" title="Center on my location">
+          {locating ? <span className="fc-spinner" /> : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <circle cx="12" cy="12" r="3"/>
+              <line x1="12" y1="2" x2="12" y2="6"/>
+              <line x1="12" y1="18" x2="12" y2="22"/>
+              <line x1="2" y1="12" x2="6" y2="12"/>
+              <line x1="18" y1="12" x2="22" y2="12"/>
+            </svg>
+          )}
+        </button>
 
-      {/* Nearby Shops */}
-      <button
-        className={`fc-btn${shopsActive ? ' fc-btn-on' : ''}${shopsLoading ? ' fc-btn-spin' : ''}`}
-        onClick={handleShops}
-        aria-label="Nearby shops"
-        title="Find nearby bike, moto & snowmobile shops"
-      >
-        {shopsLoading ? <span className="fc-spinner" /> : (
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-          </svg>
-        )}
-      </button>
+        <button className={`fc-btn${shopsActive ? ' fc-btn-on' : ''}${shopsLoading ? ' fc-btn-spin' : ''}`} onClick={handleShops} aria-label="Nearby shops" title="Find nearby shops">
+          {shopsLoading ? <span className="fc-spinner" /> : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 9l1.5-5h15L21 9"/>
+              <path d="M3 9h18v3a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0V9z"/>
+              <path d="M5 12v8h14v-8"/>
+              <path d="M10 20v-5h4v5"/>
+            </svg>
+          )}
+        </button>
 
-      {/* Filter */}
-      <div className="fc-filter-wrap" ref={dropdownRef}>
+        {/* Mobile-only filter button */}
         <button
-          className={`fc-btn${filterOpen ? ' fc-btn-on' : ''}${!anyOn ? ' fc-btn-dim' : ''}`}
-          onClick={() => setFilterOpen(o => !o)}
+          className={`fc-btn fc-mobile-only${mobileOpen ? ' fc-btn-on' : ''}${!anyOn ? ' fc-btn-dim' : ''}`}
+          onClick={() => setMobileOpen(o => !o)}
           aria-label="Trail filters"
-          title="Trail filters"
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
           </svg>
         </button>
-
-        {filterOpen && (
-          <div className="fc-dropdown">
-            <div className="fc-dropdown-header">
-              <span className="fc-dropdown-title">Trail Types</span>
-              <button className="fc-toggle-all" onClick={toggleAll}>
-                {allOn ? 'Hide All' : 'Show All'}
-              </button>
-            </div>
-            <div className="fc-list">
-              {DISPLAY_KEYS.map(key => {
-                const cfg = ACTIVITY_CONFIG[key];
-                if (!cfg) return null;
-                const active = !!activeFilters[key];
-                const section = SECTION_LABELS[key];
-                return (
-                  <div key={key}>
-                    {section && <div className="fc-section">{section}</div>}
-                    <button
-                      className={`fc-item${active ? ' active' : ''}`}
-                      style={{ '--dot': cfg.color }}
-                      onClick={() => onToggle(key)}
-                    >
-                      <span className="fc-dot" />
-                      <span className="fc-label">{cfg.label}</span>
-                      {active && (
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" className="fc-check">
-                          <polyline points="20 6 9 17 4 12"/>
-                        </svg>
-                      )}
-                    </button>
-                    {key === 'ebike' && (
-                      <button
-                        className={`fc-item fc-sub-toggle${singletrackOnly ? ' active' : ''}`}
-                        onClick={onToggleSingletrack}
-                      >
-                        <span className="fc-sub-dash">–</span>
-                        <span className="fc-label">Singletrack Only</span>
-                        {singletrackOnly && (
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" className="fc-check">
-                            <polyline points="20 6 9 17 4 12"/>
-                          </svg>
-                        )}
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
       </div>
-    </div>
+
+      {/* Mobile: full-screen overlay */}
+      {mobileOpen && (
+        <div className="fc-mobile-overlay" onClick={() => setMobileOpen(false)}>
+          <aside className="fc-sidebar fc-sidebar-mobile" onClick={e => e.stopPropagation()}>
+            {sidebarContent}
+          </aside>
+        </div>
+      )}
+    </>
   );
 }
