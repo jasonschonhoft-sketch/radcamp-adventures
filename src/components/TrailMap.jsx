@@ -238,6 +238,9 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange }) {
               }
 
               const acts = activities.filter(a => ACTIVITY_CONFIG[a]);
+              const isTrailType = properties.type === 'Trail';
+              const isRoadType = properties.type === 'Road';
+              const trailTypeLabel = isTrailType ? 'Singletrack' : isRoadType ? 'Doubletrack / Road' : null;
               const surfaceLabel = getSurfaceLabel(properties.surface);
               const lengthMi = properties.length_mi_ ? `${properties.length_mi_.toFixed(1)} mi` : null;
               const minElev = properties.min_elevat ? Math.round(properties.min_elevat * 3.28084) : null;
@@ -263,7 +266,8 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange }) {
                 content: `<div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;min-width:220px;max-width:240px;overflow:hidden;border-radius:10px">
                   <img src="${thumbUrl}" style="width:100%;height:130px;object-fit:cover;display:block;border-radius:10px 10px 0 0" />
                   <div style="padding:10px 12px 8px">
-                    <div style="font-size:14px;font-weight:700;color:#e8edf5;margin-bottom:6px;line-height:1.3">${properties.name?.trim() || 'Unnamed Trail'}</div>
+                    <div style="font-size:14px;font-weight:700;color:#e8edf5;margin-bottom:2px;line-height:1.3">${properties.name?.trim() || 'Unnamed Trail'}</div>
+                    ${trailTypeLabel ? `<div style="font-size:10px;color:#a3e635;font-weight:600;letter-spacing:0.5px;margin-bottom:6px">${trailTypeLabel}</div>` : ''}
                     <div style="margin-bottom:6px">${actRows}</div>
                     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">
                       ${lengthMi ? `<span style="font-size:10px;background:rgba(255,255,255,0.07);color:#8a9bb0;padding:2px 7px;border-radius:10px">${lengthMi}</span>` : ''}
