@@ -311,7 +311,6 @@ html, body, #root {
 /* Desktop: hide mobile-only elements */
 @media (min-width: 641px) {
   .fc-mobile-only { display: none !important; }
-  .fc-mobile-overlay { display: none !important; }
 }
 
 /* ── Weather widget
