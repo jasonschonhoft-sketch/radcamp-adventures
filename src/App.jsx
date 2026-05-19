@@ -48,7 +48,6 @@ const MODAL_ACTIVITIES = [
   { key: 'hiking', desc: 'Foot trails' },
   { key: 'ohv', desc: 'Off-highway vehicles' },
   { key: 'snowmobile', desc: 'Winter trails' },
-  { key: 'bike_path', desc: 'Paved bike paths' },
   { key: 'edirt_bike', desc: 'Electric moto' },
 ];
 
