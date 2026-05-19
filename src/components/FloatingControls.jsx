@@ -104,6 +104,16 @@ function SidebarContent({ activeFilters, onToggle, singletrackOnly, onToggleSing
           )}
         </div>
       )}
+      <div className="fc-section">ROUTE PLANNING</div>
+        <button
+          className={`fc-item${routeMode ? ' active' : ''}`}
+          style={{ '--dot': '#e67e22' }}
+          onClick={onToggleRoute}
+        >
+          <span className="fc-dot" />
+          <span className="fc-label">{routeMode ? 'Planning Mode ON' : 'Plan a Route'}</span>
+          {routeMode && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" className="fc-check"><polyline points="20 6 9 17 4 12"/></svg>}
+        </button>
       <div className="fc-section">NEARBY</div>
         <button
           className={`fc-item${campActive ? ' active' : ''}`}
