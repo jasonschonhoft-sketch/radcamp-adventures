@@ -471,7 +471,8 @@ html, body, #root {
 @media (max-width: 540px) {
   .welcome-grid { grid-template-columns: repeat(2, 1fr); }
   .welcome-modal { padding: 28px 16px 20px; }
-  .search-bar { max-width: 160px; }
+  .search-bar { max-width: 220px; }
+  .search-input { font-size: 13px; }
   .search-input::placeholder { font-size: 12px; }
 }
 
