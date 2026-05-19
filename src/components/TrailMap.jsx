@@ -116,7 +116,17 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode,
   const activeInfoWindowRef = useRef(null);
   const activePolylinesRef = useRef([]);
   const routeModeRef = useRef(routeMode);
+  const routePolylinesRef = useRef([]);
   useEffect(() => { routeModeRef.current = routeMode; }, [routeMode]);
+  // Clear highlights when route mode turns off
+  useEffect(() => {
+    if (!routeMode) {
+      routePolylinesRef.current.forEach(({ polyline, origColor, origWeight, origOpacity }) => {
+        polyline.setOptions({ strokeColor: origColor, strokeWeight: origWeight, strokeOpacity: origOpacity });
+      });
+      routePolylinesRef.current = [];
+    }
+  }, [routeMode]);
 
   useEffect(() => {
     activeFiltersRef.current = activeFilters;

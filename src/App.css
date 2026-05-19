@@ -645,3 +645,5 @@ html, body, #root {
   .welcome-camp-check { padding: 6px 4px; margin-top: 4px; }
   .welcome-go { padding: 12px; font-size: 14px; margin-top: 6px; }
 }
+
+.fc-route-empty { font-size: 11px; color: rgba(255,255,255,0.3); padding: 6px 14px 8px; line-height: 1.5; white-space: normal; word-wrap: break-word; }
