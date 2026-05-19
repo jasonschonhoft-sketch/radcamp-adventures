@@ -157,7 +157,7 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange }) {
               new google.maps.InfoWindow({
                 content: `<div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;min-width:240px;max-width:240px;overflow:hidden;border-radius:10px">
                   <img src="${thumbUrl}" style="width:100%;height:140px;object-fit:cover;display:block;border-radius:10px 10px 0 0" />
-                  <div style="padding:10px 12px">
+                  <div style="padding:8px 12px;margin-top:-1px">
                     <div style="font-size:13px;font-weight:700;color:#e8edf5;margin-bottom:6px;line-height:1.3">${properties.name || 'Unnamed Trail'}</div>
                     <div>${actRows}</div>
                     ${surfaceLabel ? `<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.07);font-size:11px;color:rgba(255,255,255,0.35)">${surfaceLabel}</div>` : ''}
