@@ -102,7 +102,7 @@ function WelcomeModal({ onSelect, onCamp }) {
           Also show campgrounds
         </label>
         <button className="welcome-go" onClick={handleGo}>
-          {selected.length === 0 ? "Show all trails" : `Show ${selected.length === 1 ? ACTIVITY_CONFIG[selected[0]]?.label : selected.length + " trail types"}`} →
+          Let's Ride →
         </button>
       </div>
     </div>
