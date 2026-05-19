@@ -265,7 +265,9 @@ export default function TrailMap({ activeFilters, singletrackOnly, onMapReady })
 
   function handleMapTypeToggle(type) {
     setMapType(type);
-    if (mapObjRef.current) mapObjRef.current.setMapTypeId(type);
+    if (mapObjRef.current) {
+      mapObjRef.current.setMapTypeId(type);
+    }
   }
 
   return (
@@ -274,17 +276,17 @@ export default function TrailMap({ activeFilters, singletrackOnly, onMapReady })
         defaultCenter={COLORADO_CENTER}
         defaultZoom={10}
         gestureHandling="greedy"
-        mapTypeId={mapType}
+        mapTypeId="hybrid"
         mapTypeControl={false}
         fullscreenControl={false}
         streetViewControl={false}
         zoomControl={true}
       >
-        {onMapReady && <MapController onMapReady={onMapReady} onMapInit={m => mapObjRef.current = m} />}
+        {onMapReady && <MapController onMapReady={onMapReady} onMapInit={m => { mapObjRef.current = m; m.setMapTypeId(mapType); }} />}
         <TrailLayer activeFilters={activeFilters} singletrackOnly={singletrackOnly} onStatusChange={setStatus} />
       </Map>
 
-      <div className="map-type-toggle" style={{position:"absolute",top:"12px",right:"12px",zIndex:40}}>
+      <div className="map-type-toggle" style={{position:"absolute",top:"12px",right:"12px",zIndex:50}}>
         <button className={`map-type-btn${mapType === 'roadmap' ? ' active' : ''}`} onClick={() => handleMapTypeToggle('roadmap')}>Map</button>
         <button className={`map-type-btn${mapType === 'hybrid' ? ' active' : ''}`} onClick={() => handleMapTypeToggle('hybrid')}>Sat</button>
       </div>
