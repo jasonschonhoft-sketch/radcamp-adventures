@@ -562,3 +562,15 @@ html, body, #root {
 
 .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
 .header-trail-count { font-size: 10px; color: var(--text-sec); letter-spacing: 0.3px; }
+
+.brand-logo {
+  height: 44px;
+  width: auto;
+  display: block;
+}
+.welcome-logo {
+  height: 140px;
+  width: auto;
+  display: block;
+  margin: 0 auto 16px;
+}
