@@ -572,6 +572,6 @@ html, body, #root {
   height: 260px;
   width: auto;
   display: block;
-  margin: -40px auto -50px;
-  clip-path: inset(10% 5% 5% 5%);
+  margin: -80px auto -50px;
+  clip-path: inset(20% 5% 5% 5%);
 }
