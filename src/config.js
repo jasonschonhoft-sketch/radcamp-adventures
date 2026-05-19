@@ -43,15 +43,15 @@ export const ACTIVITY_CONFIG = {
     note: 'Gravel and unpaved surfaces',
   },
   dirt_bike: {
-    label: 'Dirt Bike',
+    label: 'Moto',
     color: '#FF5722',
     weight: 2.5,
   },
   edirt_bike: {
-    label: 'E-Dirt Bike',
+    label: 'E-Moto',
     color: '#E040FB',
     weight: 2.5,
-    note: 'Same access as dirt bike',
+    note: 'Same access as moto',
   },
   ohv: {
     label: 'OHV / Side-by-Side',

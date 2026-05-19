@@ -8,15 +8,17 @@ import './App.css';
 
 const URL_PARAM_MAP = {
   mtb: 'mountain_bike',
+  moto: 'dirt_bike',
   dirtbike: 'dirt_bike',
   roadbike: 'road_bike',
   gravelbike: 'gravel_bike',
   ebike: 'ebike',
+  emoto: 'edirt_bike',
+  edirtbike: 'edirt_bike',
   hiking: 'hiking',
   ohv: 'ohv',
   snowmobile: 'snowmobile',
   bikepath: 'bike_path',
-  edirtbike: 'edirt_bike',
 };
 
 function resolveStartActivity() {
@@ -38,7 +40,7 @@ const showModal = startActivity === null;
 
 const MODAL_ACTIVITIES = [
   { key: 'mountain_bike', desc: 'Singletrack' },
-  { key: 'dirt_bike', desc: 'Motorcycle trails' },
+  { key: 'dirt_bike', desc: 'Moto trails' },
   { key: 'road_bike', desc: 'Paved roads' },
   { key: 'gravel_bike', desc: 'Mixed surface' },
   { key: 'ebike', desc: 'Electric bikes' },
@@ -46,7 +48,7 @@ const MODAL_ACTIVITIES = [
   { key: 'ohv', desc: 'Off-highway vehicles' },
   { key: 'snowmobile', desc: 'Winter trails' },
   { key: 'bike_path', desc: 'Paved bike paths' },
-  { key: 'edirt_bike', desc: 'Electric dirt bikes' },
+  { key: 'edirt_bike', desc: 'Electric moto' },
 ];
 
 function WelcomeModal({ onSelect }) {

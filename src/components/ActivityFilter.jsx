@@ -9,8 +9,8 @@ const ACTIVITY_CONFIG = {
   bike_path: { color: '#06b6d4', label: 'Bike Path', note: 'Paved' },
   road_bike: { color: '#ef4444', label: 'Road Bike' },
   gravel_bike: { color: '#f59e0b', label: 'Gravel Bike' },
-  dirt_bike: { color: '#f97316', label: 'Dirt Bike' },
-  edirt_bike: { color: '#d946ef', label: 'E-Dirt Bike', note: 'Surron/Segway' },
+  dirt_bike: { color: '#f97316', label: 'Moto' },
+  edirt_bike: { color: '#d946ef', label: 'E-Moto', note: 'Surron/Segway' },
   ohv: { color: '#eab308', label: 'OHV / Side-by-Side' },
   snowmobile: { color: '#14b8a6', label: 'Snowmobile' }
 };
