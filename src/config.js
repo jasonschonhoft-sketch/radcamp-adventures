@@ -13,7 +13,7 @@ export const ACTIVITY_CONFIG = {
     color: '#4CAF50',
     weight: 2,
   },
-  bike: {
+  mountain_bike: {
     label: 'MTB',
     color: '#2979FF',
     weight: 2,
@@ -42,12 +42,12 @@ export const ACTIVITY_CONFIG = {
     weight: 2,
     note: 'Gravel and unpaved surfaces',
   },
-  motorcycle: {
+  dirt_bike: {
     label: 'Dirt Bike',
     color: '#FF5722',
     weight: 2.5,
   },
-  emoto: {
+  edirt_bike: {
     label: 'E-Dirt Bike',
     color: '#E040FB',
     weight: 2.5,

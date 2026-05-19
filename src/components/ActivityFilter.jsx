@@ -1,6 +1,6 @@
 import React from 'react';
 
-const ACTIVITY_KEYS = ['hiking', 'mountain_bike', 'ebike', 'bike_path', 'road_bike', 'gravel_bike', 'dirt_bike', 'edirt_bike', 'ohv', 'snowmobile'];
+const ACTIVITY_KEYS = ['hiking', 'mountain_bike', 'bike_path', 'road_bike', 'gravel_bike', 'ebike', 'dirt_bike', 'ohv', 'edirt_bike', 'snowmobile'];
 
 const ACTIVITY_CONFIG = {
   hiking: { color: '#22c55e', label: 'Hiking' },
@@ -18,13 +18,13 @@ const ACTIVITY_CONFIG = {
 const SECTION_LABELS = {
   hiking: null,
   mountain_bike: 'CYCLING',
-  ebike: null,
   bike_path: null,
   road_bike: null,
   gravel_bike: null,
+  ebike: null,
   dirt_bike: 'MOTORIZED',
-  edirt_bike: null,
   ohv: null,
+  edirt_bike: null,
   snowmobile: 'WINTER',
 };
 

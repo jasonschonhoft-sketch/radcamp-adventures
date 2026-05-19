@@ -23,13 +23,13 @@ function getTrailActivities(props) {
     } else if (isGravel) {
       acts.push('gravel_bike');
     } else {
-      acts.push('bike');
+      acts.push('mountain_bike');
     }
   }
 
   if (props.motorcycle === 'yes') {
-    acts.push('motorcycle');
-    acts.push('emoto');
+    acts.push('dirt_bike');
+    acts.push('edirt_bike');
   }
 
   if (props.atv === 'yes' || props.ohv_gt_50 === 'yes') acts.push('ohv');
