@@ -40,16 +40,16 @@ const startActivity = resolveStartActivity();
 const showModal = startActivity === null;
 
 const MODAL_ACTIVITIES = [
-  { key: 'dirt_bike', desc: 'Moto trails' },
-  { key: 'ohv', desc: 'Off-highway vehicles' },
-  { key: 'edirt_bike', desc: 'Electric moto' },
-  { key: 'mountain_bike', desc: 'Singletrack' },
-  { key: 'ebike', desc: 'Electric bikes' },
-  { key: 'gravel_bike', desc: 'Mixed surface' },
-  { key: 'road_bike', desc: 'Paved roads' },
-  { key: 'hiking', desc: 'Foot trails' },
-  { key: 'horse', desc: 'Equestrian trails' },
-  { key: 'snowmobile', desc: 'Winter trails' },
+  { key: 'dirt_bike', desc: '' },
+  { key: 'ohv', desc: '' },
+  { key: 'edirt_bike', desc: '' },
+  { key: 'snowmobile', desc: '' },
+  { key: 'mountain_bike', desc: '' },
+  { key: 'ebike', desc: '' },
+  { key: 'gravel_bike', desc: '' },
+  { key: 'road_bike', desc: '' },
+  { key: 'hiking', desc: '' },
+  { key: 'horse', desc: '' },
 ];
 
 function WelcomeModal({ onSelect }) {
