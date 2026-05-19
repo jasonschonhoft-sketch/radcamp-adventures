@@ -9,11 +9,16 @@ const DISPLAY_KEYS = [
   'ebike', 'horse', 'snowmobile',
 ];
 
-const SECTION_LABELS = {};
-
 const SHOP_QUERIES = ['bicycle shop', 'motorcycle shop', 'snowmobile dealer'];
 
-function SidebarContent({ activeFilters, onToggle, singletrackOnly, onToggleSingletrack, onClose, showClose, campActive, onToggleCamp, campLoading, shopsActive, onToggleShops, routeMode, routeTrails, onClearRoute, onRemoveTrail, onOpenInMaps, onShareRoute }) {
+function SidebarContent({
+  activeFilters, onToggle, singletrackOnly, onToggleSingletrack,
+  onClose, showClose,
+  campActive, onToggleCamp, campLoading,
+  shopsActive, onToggleShops,
+  routeMode, onToggleRoute, routeTrails,
+  onClearRoute, onRemoveTrail, onOpenInMaps, onShareRoute,
+}) {
   const allOn = DISPLAY_KEYS.every(k => activeFilters[k]);
 
   function toggleAll() {
@@ -41,10 +46,8 @@ function SidebarContent({ activeFilters, onToggle, singletrackOnly, onToggleSing
           const cfg = ACTIVITY_CONFIG[key];
           if (!cfg) return null;
           const active = !!activeFilters[key];
-          const section = SECTION_LABELS[key];
           return (
             <div key={key}>
-              {section && <div className="fc-section">{section}</div>}
               <button
                 className={`fc-item${active ? ' active' : ''}`}
                 style={{ '--dot': cfg.color }}
@@ -59,10 +62,7 @@ function SidebarContent({ activeFilters, onToggle, singletrackOnly, onToggleSing
                 )}
               </button>
               {key === 'dirt_bike' && (
-                <button
-                  className={`fc-item fc-sub-toggle${singletrackOnly ? ' active' : ''}`}
-                  onClick={onToggleSingletrack}
-                >
+                <button className={`fc-item fc-sub-toggle${singletrackOnly ? ' active' : ''}`} onClick={onToggleSingletrack}>
                   <span className="fc-sub-dash">–</span>
                   <span className="fc-label">Singletrack Only</span>
                   {singletrackOnly && (
@@ -75,109 +75,90 @@ function SidebarContent({ activeFilters, onToggle, singletrackOnly, onToggleSing
             </div>
           );
         })}
-      {routeMode && (
-        <div className="fc-route-panel">
-          <div className="fc-section" style={{paddingTop: '14px'}}>PLANNED ROUTE</div>
-          {routeTrails.length === 0 ? (
-            <div className="fc-route-empty">Tap trails on the map to add them</div>
-          ) : (
-            <>
-              <div className="fc-route-list">
-                {routeTrails.map((t, i) => (
-                  <div key={i} className="fc-route-item">
-                    <span className="fc-route-num">{i + 1}</span>
-                    <span className="fc-route-name">{t.name || 'Unnamed'}</span>
-                    <span className="fc-route-dist">{t.miles ? t.miles.toFixed(1) + 'mi' : ''}</span>
-                    <button className="fc-route-remove" onClick={() => onRemoveTrail(i)}>×</button>
-                  </div>
-                ))}
-              </div>
-              <div className="fc-route-total">
-                Total: {routeTrails.reduce((s, t) => s + (t.miles || 0), 0).toFixed(1)} miles
-              </div>
-              <div className="fc-route-actions">
-                <button className="fc-route-btn" onClick={onOpenInMaps}>Open in Maps</button>
-                <button className="fc-route-btn fc-route-btn-share" onClick={onShareRoute}>Share</button>
-              </div>
-              <button className="fc-route-clear" onClick={onClearRoute}>Clear Route</button>
-            </>
-          )}
-        </div>
-      )}
-      <div className="fc-section">ROUTE PLANNING</div>
-        <button
-          className={`fc-item${routeMode ? ' active' : ''}`}
-          style={{ '--dot': '#e67e22' }}
-          onClick={onToggleRoute}
-        >
+
+        {/* Route Planning */}
+        <div className="fc-section">ROUTE PLANNING</div>
+        <button className={`fc-item${routeMode ? ' active' : ''}`} style={{ '--dot': '#e67e22' }} onClick={onToggleRoute}>
           <span className="fc-dot" />
           <span className="fc-label">{routeMode ? 'Planning Mode ON' : 'Plan a Route'}</span>
           {routeMode && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" className="fc-check"><polyline points="20 6 9 17 4 12"/></svg>}
         </button>
-      <div className="fc-section">NEARBY</div>
-        <button
-          className={`fc-item${campActive ? ' active' : ''}`}
-          style={{ '--dot': '#22c55e' }}
-          onClick={onToggleCamp}
-        >
+
+        {routeMode && (
+          <div className="fc-route-panel">
+            {routeTrails.length === 0 ? (
+              <div className="fc-route-empty">Tap trails on the map to add them</div>
+            ) : (
+              <>
+                <div className="fc-route-list">
+                  {routeTrails.map((t, i) => (
+                    <div key={i} className="fc-route-item">
+                      <span className="fc-route-num">{i + 1}</span>
+                      <span className="fc-route-name">{t.name || 'Unnamed'}</span>
+                      <span className="fc-route-dist">{t.miles ? t.miles.toFixed(1) + 'mi' : ''}</span>
+                      <button className="fc-route-remove" onClick={() => onRemoveTrail(i)}>×</button>
+                    </div>
+                  ))}
+                </div>
+                <div className="fc-route-total">
+                  Total: {routeTrails.reduce((s, t) => s + (t.miles || 0), 0).toFixed(1)} miles
+                </div>
+                <div className="fc-route-actions">
+                  <button className="fc-route-btn" onClick={onOpenInMaps}>Open in Maps</button>
+                  <button className="fc-route-btn fc-route-btn-share" onClick={onShareRoute}>Share</button>
+                </div>
+                <button className="fc-route-clear" onClick={onClearRoute}>Clear Route</button>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Nearby */}
+        <div className="fc-section">NEARBY</div>
+        <button className={`fc-item${campActive ? ' active' : ''}`} style={{ '--dot': '#22c55e' }} onClick={onToggleCamp}>
           <span className="fc-dot" />
           <span className="fc-label">{campLoading ? 'Loading...' : 'Campgrounds'}</span>
           {campActive && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" className="fc-check"><polyline points="20 6 9 17 4 12"/></svg>}
         </button>
-        <button
-          className={`fc-item${shopsActive ? ' active' : ''}`}
-          style={{ '--dot': '#e67e22' }}
-          onClick={onToggleShops}
-        >
+        <button className={`fc-item${shopsActive ? ' active' : ''}`} style={{ '--dot': '#e67e22' }} onClick={onToggleShops}>
           <span className="fc-dot" />
           <span className="fc-label">Nearby Shops</span>
           {shopsActive && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" className="fc-check"><polyline points="20 6 9 17 4 12"/></svg>}
-        </button>
-      <div className="fc-section">CAMPGROUNDS</div>
-        <button
-          className={`fc-item${campActive ? ' active' : ''}`}
-          style={{ '--dot': '#22c55e' }}
-          onClick={onToggleCamp}
-        >
-          <span className="fc-dot" />
-          <span className="fc-label">Campgrounds</span>
-          {campActive && (
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" className="fc-check">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-          )}
         </button>
       </div>
     </>
   );
 }
 
-export default function FloatingControls({ activeFilters, onToggle, singletrackOnly, onToggleSingletrack, mapRef, externalCampActive, onCampChange, onRouteModeChange, onAddToRoute }) {
+export default function FloatingControls({ activeFilters, onToggle, singletrackOnly, onToggleSingletrack, mapRef, externalCampActive, onCampChange, onRouteModeChange }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [locating, setLocating] = useState(false);
   const [shopsActive, setShopsActive] = useState(false);
   const [shopsLoading, setShopsLoading] = useState(false);
   const shopMarkersRef = useRef([]);
   const [campActive, setCampActiveInternal] = useState(false);
-  const [routeMode, setRouteMode] = useState(false);
-  const [routeTrails, setRouteTrails] = useState([]);
-  function setCampActive(val) {
-    setCampActiveInternal(val);
-    if (onCampChange) onCampChange(val);
-  }
-  // Sync from external (e.g. welcome modal)
-  useEffect(() => {
-    if (externalCampActive && !campActive) {
-      handleCamp();
-    }
-  }, [externalCampActive]);
   const [campLoading, setCampLoading] = useState(false);
   const campMarkersRef = useRef([]);
+  const [routeMode, setRouteMode] = useState(false);
+  const [routeTrails, setRouteTrails] = useState([]);
   const placesLib = useMapsLibrary('places');
 
   const anyOn = DISPLAY_KEYS.some(k => activeFilters[k]);
   const allOn = DISPLAY_KEYS.every(k => activeFilters[k]);
   const activeCount = DISPLAY_KEYS.filter(k => activeFilters[k]).length;
+
+  function setCampActive(val) {
+    setCampActiveInternal(val);
+    if (onCampChange) onCampChange(val);
+  }
+
+  useEffect(() => {
+    if (externalCampActive && !campActive) handleCamp();
+  }, [externalCampActive]);
+
+  useEffect(() => {
+    if (onRouteModeChange) onRouteModeChange(routeMode);
+  }, [routeMode]);
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -201,18 +182,9 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
     );
   }
 
-  function clearShopMarkers() {
-    shopMarkersRef.current.forEach(m => m.setMap(null));
-    shopMarkersRef.current = [];
-  }
-
+  function clearShopMarkers() { shopMarkersRef.current.forEach(m => m.setMap(null)); shopMarkersRef.current = []; }
+  function clearCampMarkers() { campMarkersRef.current.forEach(m => m.setMap(null)); campMarkersRef.current = []; }
   useEffect(() => () => clearShopMarkers(), []);
-
-  function clearCampMarkers() {
-    campMarkersRef.current.forEach(m => m.setMap(null));
-    campMarkersRef.current = [];
-  }
-
   useEffect(() => () => clearCampMarkers(), []);
 
   function handleCamp() {
@@ -225,10 +197,8 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
     const queries = ['campground', 'rv park', 'camping'];
     let pending = queries.length;
     const all = [];
-
     queries.forEach(query => {
       service.textSearch({ location: center, radius: 80467, query }, (results, status) => {
-        console.log('Camp search:', query, status, results?.length);
         if (status === placesLib.PlacesServiceStatus.OK && results) all.push(...results.slice(0, 8));
         if (--pending === 0) {
           setCampLoading(false);
@@ -239,18 +209,16 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
             if (seen.has(place.place_id) || !place.geometry?.location) return;
             seen.add(place.place_id);
             const marker = new google.maps.Marker({
-              position: place.geometry.location,
-              map,
+              position: place.geometry.location, map,
               icon: { path: google.maps.SymbolPath.CIRCLE, scale: 9, fillColor: '#22c55e', fillOpacity: 0.92, strokeColor: '#fff', strokeWeight: 2 },
-              title: place.name,
-              zIndex: 200,
+              title: place.name, zIndex: 200,
             });
             marker.addListener('click', () => {
               new google.maps.InfoWindow({
-                content: `<div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;padding:12px 14px;min-width:180px;max-width:260px">
+                content: `<div style="font-family:-apple-system,sans-serif;padding:12px 14px;min-width:180px;max-width:260px">
                   <div style="font-size:13px;font-weight:700;color:#e8edf5;margin-bottom:4px">${place.name}</div>
                   <div style="font-size:11px;color:#8a9bb0;line-height:1.4;margin-bottom:6px">${place.vicinity || ''}</div>
-                  ${place.rating ? `<div style="font-size:11px;color:#22c55e;margin-bottom:6px">${place.rating}★ ${place.user_ratings_total ? ' (' + place.user_ratings_total + ' reviews)' : ''}</div>` : ''}
+                  ${place.rating ? `<div style="font-size:11px;color:#22c55e;margin-bottom:6px">${place.rating}★ ${place.user_ratings_total ? '(' + place.user_ratings_total + ' reviews)' : ''}</div>` : ''}
                   <a href="https://www.google.com/maps/place/?q=place_id:${place.place_id}" target="_blank" style="font-size:11px;color:#22c55e;text-decoration:none">View &amp; Book →</a>
                 </div>`,
               }).open(map, marker);
@@ -283,18 +251,16 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
             if (seen.has(place.place_id) || !place.geometry?.location) return;
             seen.add(place.place_id);
             const marker = new google.maps.Marker({
-              position: place.geometry.location,
-              map,
+              position: place.geometry.location, map,
               icon: { path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: '#e67e22', fillOpacity: 0.92, strokeColor: '#fff', strokeWeight: 2 },
-              title: place.name,
-              zIndex: 200,
+              title: place.name, zIndex: 200,
             });
             marker.addListener('click', () => {
               new google.maps.InfoWindow({
-                content: `<div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;padding:10px 12px;min-width:160px;max-width:220px">
+                content: `<div style="font-family:-apple-system,sans-serif;padding:10px 12px;min-width:160px;max-width:220px">
                   <div style="font-size:13px;font-weight:700;color:#e8edf5;margin-bottom:4px">${place.name}</div>
                   <div style="font-size:11px;color:#8a9bb0;line-height:1.4">${place.vicinity || ''}</div>
-                  ${place.rating ? `<div style="font-size:11px;color:#e67e22;margin-top:5px">${place.rating}★ ${place.user_ratings_total ? `(${place.user_ratings_total})` : ''}</div>` : ''}
+                  ${place.rating ? `<div style="font-size:11px;color:#e67e22;margin-top:5px">${place.rating}★ ${place.user_ratings_total ? '(' + place.user_ratings_total + ')' : ''}</div>` : ''}
                 </div>`,
               }).open(map, marker);
             });
@@ -305,38 +271,18 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
     });
   }
 
-  useEffect(() => {
-    if (onRouteModeChange) onRouteModeChange(routeMode);
-  }, [routeMode]);
-
-  function handleAddToRoute(trail) {
-    setRouteTrails(prev => {
-      if (prev.find(t => t.name === trail.name && t.miles === trail.miles)) return prev;
-      return [...prev, trail];
-    });
-  }
-
-  function handleRemoveTrail(i) {
-    setRouteTrails(prev => prev.filter((_, idx) => idx !== i));
-  }
-
-  function handleClearRoute() {
-    setRouteTrails([]);
-  }
-
+  function handleRemoveTrail(i) { setRouteTrails(prev => prev.filter((_, idx) => idx !== i)); }
+  function handleClearRoute() { setRouteTrails([]); }
   function handleOpenInMaps() {
     if (routeTrails.length === 0) return;
     const waypoints = routeTrails.map(t => t.lat && t.lng ? `${t.lat},${t.lng}` : t.name).filter(Boolean);
     const origin = waypoints[0];
     const dest = waypoints[waypoints.length - 1];
     const middle = waypoints.slice(1, -1).join('|');
-    const url = `https://www.google.com/maps/dir/${origin}/${middle ? middle + '/' : ''}${dest}`;
-    window.open(url, '_blank');
+    window.open(`https://www.google.com/maps/dir/${origin}/${middle ? middle + '/' : ''}${dest}`, '_blank');
   }
-
   function handleShareRoute() {
-    const names = routeTrails.map(t => encodeURIComponent(t.name || '')).join(',');
-    const url = `${window.location.origin}?route=${names}`;
+    const url = `${window.location.origin}?route=${routeTrails.map(t => encodeURIComponent(t.name || '')).join(',')}`;
     if (navigator.share) {
       navigator.share({ title: 'RadCamp Route', text: 'Check out this route!', url });
     } else {
@@ -344,32 +290,23 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
     }
   }
 
+  const sidebarProps = {
+    activeFilters, onToggle, singletrackOnly, onToggleSingletrack,
+    campActive, onToggleCamp: handleCamp, campLoading,
+    shopsActive, onToggleShops: handleShops,
+    routeMode, onToggleRoute: () => setRouteMode(o => !o),
+    routeTrails, onClearRoute: handleClearRoute,
+    onRemoveTrail: handleRemoveTrail,
+    onOpenInMaps: handleOpenInMaps,
+    onShareRoute: handleShareRoute,
+  };
+
   return (
     <>
-      {/* Desktop: permanent sidebar */}
       <aside className="fc-sidebar fc-sidebar-desktop">
-        <SidebarContent
-          activeFilters={activeFilters}
-          onToggle={onToggle}
-          singletrackOnly={singletrackOnly}
-          onToggleSingletrack={onToggleSingletrack}
-          onClose={() => {}}
-          showClose={false}
-          campActive={campActive}
-          onToggleCamp={handleCamp}
-          campLoading={campLoading}
-          shopsActive={shopsActive}
-          onToggleShops={handleShops}
-          routeMode={routeMode}
-          routeTrails={routeTrails}
-          onClearRoute={handleClearRoute}
-          onRemoveTrail={handleRemoveTrail}
-          onOpenInMaps={handleOpenInMaps}
-          onShareRoute={handleShareRoute}
-        />
+        <SidebarContent {...sidebarProps} onClose={() => {}} showClose={false} />
       </aside>
 
-      {/* Floating buttons */}
       <div className="floating-controls">
         <button className={`fc-btn${locating ? ' fc-btn-spin' : ''}`} onClick={handleLocate} aria-label="Locate me">
           {locating ? <span className="fc-spinner" /> : (
@@ -383,86 +320,19 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
           )}
         </button>
 
-        <button className={`fc-btn${shopsActive ? ' fc-btn-on' : ''}${shopsLoading ? ' fc-btn-spin' : ''}`} onClick={handleShops} aria-label="Nearby shops">
-          {shopsLoading ? <span className="fc-spinner" /> : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 9l1.5-5h15L21 9"/>
-              <path d="M3 9h18v3a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0V9z"/>
-              <path d="M5 12v8h14v-8"/>
-              <path d="M10 20v-5h4v5"/>
-            </svg>
-          )}
-        </button>
-
-        {/* Route planner button */}
-        <button
-          className={`fc-btn${routeMode ? ' fc-btn-on' : ''}`}
-          onClick={() => setRouteMode(o => !o)}
-          aria-label="Plan route"
-          title="Plan a route"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="5" cy="5" r="2"/><circle cx="19" cy="19" r="2"/><path d="M5 7v3a2 2 0 0 0 2 2h10a2 2 0 0 1 2 2v3"/>
-          </svg>
-        </button>
-
-        {/* Mobile-only filter button */}
-        <button
-          className={`fc-btn fc-mobile-only${mobileOpen ? ' fc-btn-on' : ''}${!anyOn ? ' fc-btn-dim' : ''}`}
-          onClick={() => setMobileOpen(o => !o)}
-          aria-label="Trail filters"
-          style={{ position: 'relative' }}
-        >
+        <button className={`fc-btn fc-mobile-only${mobileOpen ? ' fc-btn-on' : ''}${!anyOn ? ' fc-btn-dim' : ''}`}
+          onClick={() => setMobileOpen(o => !o)} aria-label="Trail filters" style={{ position: 'relative' }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
           </svg>
-          {anyOn && !allOn && (
-            <span className="fc-badge">{activeCount}</span>
-          )}
+          {anyOn && !allOn && <span className="fc-badge">{activeCount}</span>}
         </button>
       </div>
 
-      {/* Mobile overlay — portalled to body */}
       {mobileOpen && createPortal(
-        <div
-          onClick={() => setMobileOpen(false)}
-          style={{
-            position: 'fixed', inset: 0, zIndex: 99999,
-            background: 'rgba(0,0,0,0.7)',
-            display: 'flex', alignItems: 'stretch',
-          }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              width: '80vw', maxWidth: '300px',
-              height: '100%',
-              background: '#0f1117',
-              borderRight: '1px solid rgba(255,255,255,0.08)',
-              display: 'flex', flexDirection: 'column',
-              overflowY: 'auto',
-              zIndex: 100000,
-            }}
-          >
-            <SidebarContent
-              activeFilters={activeFilters}
-              onToggle={onToggle}
-              singletrackOnly={singletrackOnly}
-              onToggleSingletrack={onToggleSingletrack}
-              onClose={() => setMobileOpen(false)}
-              showClose={true}
-              campActive={campActive}
-              onToggleCamp={handleCamp}
-              campLoading={campLoading}
-              shopsActive={shopsActive}
-              onToggleShops={handleShops}
-              routeMode={routeMode}
-              routeTrails={routeTrails}
-              onClearRoute={handleClearRoute}
-              onRemoveTrail={handleRemoveTrail}
-              onOpenInMaps={handleOpenInMaps}
-              onShareRoute={handleShareRoute}
-            />
+        <div onClick={() => setMobileOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'stretch' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '80vw', maxWidth: '300px', height: '100%', background: '#0f1117', borderRight: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', overflowY: 'auto', zIndex: 100000 }}>
+            <SidebarContent {...sidebarProps} onClose={() => setMobileOpen(false)} showClose={true} />
           </div>
         </div>,
         document.body
