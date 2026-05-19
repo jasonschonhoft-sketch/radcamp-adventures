@@ -232,14 +232,24 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
       {/* Mobile overlay — portalled to body */}
       {mobileOpen && createPortal(
         <div
-          className="fc-mobile-overlay"
-          onTouchEnd={() => setMobileOpen(false)}
           onClick={() => setMobileOpen(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 99999,
+            background: 'rgba(0,0,0,0.7)',
+            display: 'flex', alignItems: 'stretch',
+          }}
         >
-          <aside
-            className="fc-sidebar fc-sidebar-mobile"
-            onTouchEnd={e => e.stopPropagation()}
+          <div
             onClick={e => e.stopPropagation()}
+            style={{
+              width: '80vw', maxWidth: '300px',
+              height: '100%',
+              background: '#0f1117',
+              borderRight: '1px solid rgba(255,255,255,0.08)',
+              display: 'flex', flexDirection: 'column',
+              overflowY: 'auto',
+              zIndex: 100000,
+            }}
           >
             <SidebarContent
               activeFilters={activeFilters}
@@ -249,7 +259,7 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
               onClose={() => setMobileOpen(false)}
               showClose={true}
             />
-          </aside>
+          </div>
         </div>,
         document.body
       )}
