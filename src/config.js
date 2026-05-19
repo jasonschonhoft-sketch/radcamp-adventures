@@ -58,6 +58,11 @@ export const ACTIVITY_CONFIG = {
     color: '#fbbf24',
     weight: 2.5,
   },
+  horse: {
+    label: 'Horseback',
+    color: '#a16207',
+    weight: 2,
+  },
   snowmobile: {
     label: 'Snowmobile',
     color: '#e2e8f0',

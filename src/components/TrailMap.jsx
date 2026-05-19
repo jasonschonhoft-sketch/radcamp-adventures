@@ -42,6 +42,7 @@ function getTrailActivities(props) {
   if (props.motorcycle === 'yes') { acts.push('dirt_bike'); acts.push('edirt_bike'); }
   if (props.atv === 'yes' || props.ohv_gt_50 === 'yes') acts.push('ohv');
   if (props.snowmobile === 'yes') acts.push('snowmobile');
+  if (props.horse === 'yes') acts.push('horse');
   return acts;
 }
 
@@ -58,7 +59,7 @@ async function fetchTrailsInBounds(bounds) {
   const params = new URLSearchParams({
     where: '1=1', geometry, geometryType: 'esriGeometryEnvelope',
     spatialRel: 'esriSpatialRelIntersects', inSR: '4326', outSR: '4326',
-    outFields: 'name,hiking,bike,motorcycle,atv,ohv_gt_50,snowmobile,surface,type,highway_ve',
+    outFields: 'name,hiking,bike,motorcycle,atv,ohv_gt_50,snowmobile,horse,surface,type,highway_ve',
     f: 'geojson', resultRecordCount: MAX_RECORDS,
   });
   const res = await fetch(`${COTREX_URL}?${params}`);

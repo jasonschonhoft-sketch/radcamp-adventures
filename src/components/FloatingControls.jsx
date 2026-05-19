@@ -6,7 +6,7 @@ import { ACTIVITY_CONFIG } from '../config';
 const DISPLAY_KEYS = [
   'dirt_bike', 'ohv', 'edirt_bike',
   'hiking', 'mountain_bike', 'road_bike', 'gravel_bike',
-  'ebike', 'snowmobile',
+  'ebike', 'horse', 'snowmobile',
 ];
 
 const SECTION_LABELS = {
@@ -18,6 +18,7 @@ const SECTION_LABELS = {
   road_bike: null,
   gravel_bike: null,
   ebike: null,
+  horse: 'OTHER',
   snowmobile: 'WINTER',
 };
 

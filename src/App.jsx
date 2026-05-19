@@ -48,6 +48,7 @@ const MODAL_ACTIVITIES = [
   { key: 'gravel_bike', desc: 'Mixed surface' },
   { key: 'road_bike', desc: 'Paved roads' },
   { key: 'hiking', desc: 'Foot trails' },
+  { key: 'horse', desc: 'Equestrian trails' },
   { key: 'snowmobile', desc: 'Winter trails' },
 ];
 
