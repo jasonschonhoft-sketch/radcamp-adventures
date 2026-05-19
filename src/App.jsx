@@ -91,7 +91,6 @@ export default function App() {
   const [activeFilters, setActiveFilters] = useState(() => makeFilters(startActivity));
   const [modalVisible, setModalVisible] = useState(showModal);
   const [singletrackOnly, setSingletrackOnly] = useState(false);
-  const [trailCount, setTrailCount] = useState(null);
   const mapRef = useRef(null);
 
   function toggleFilter(activity) {
@@ -153,8 +152,7 @@ export default function App() {
           <SearchBar onPlaceSelect={handlePlaceSelect} />
           <div className="header-right">
             <span className="header-tagline">Colorado Trail Explorer</span>
-            {trailCount !== null && <span className="header-trail-count">{trailCount.toLocaleString()} segments</span>}
-          </div>
+
         </header>
 
         <main className="app-main">
