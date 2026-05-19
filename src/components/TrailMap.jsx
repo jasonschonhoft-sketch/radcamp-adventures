@@ -72,7 +72,10 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange }) {
   const polylinesRef = useRef({});
   const activeFiltersRef = useRef(activeFilters);
   const singletrackOnlyRef = useRef(singletrackOnly);
+  const onStatusChangeRef = useRef(onStatusChange);
   const debounceRef = useRef(null);
+
+  useEffect(() => { onStatusChangeRef.current = onStatusChange; });
 
   useEffect(() => {
     activeFiltersRef.current = activeFilters;
@@ -98,14 +101,14 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange }) {
         (polylinesRef.current[activity] || []).forEach(p => p.setMap(null));
         polylinesRef.current[activity] = [];
       });
-      onStatusChange({ type: 'zoom', zoom });
+      onStatusChangeRef.current({ type: 'zoom', zoom });
       return;
     }
     const bounds = map.getBounds();
     if (!bounds) return;
     const ne = bounds.getNorthEast();
     const sw = bounds.getSouthWest();
-    onStatusChange({ type: 'loading' });
+    onStatusChangeRef.current({ type: 'loading' });
     try {
       const { features, exceeded } = await fetchTrailsInBounds({
         north: ne.lat(), south: sw.lat(), east: ne.lng(), west: sw.lng(),
@@ -155,12 +158,12 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange }) {
           });
         });
       });
-      onStatusChange({ type: 'loaded', count: features.length, exceeded });
+      onStatusChangeRef.current({ type: 'loaded', count: features.length, exceeded });
     } catch (err) {
       console.error('Trail load error:', err);
-      onStatusChange({ type: 'error' });
+      onStatusChangeRef.current({ type: 'error' });
     }
-  }, [map, onStatusChange]);
+  }, [map]);
 
   useEffect(() => {
     if (!map) return;
@@ -182,9 +185,8 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange }) {
   return null;
 }
 
-export default function TrailMap({ activeFilters, singletrackOnly, onMapReady, onStatusChange }) {
+export default function TrailMap({ activeFilters, singletrackOnly, onMapReady }) {
   const [status, setStatus] = useState({ type: 'idle' });
-  function handleStatus(s) { setStatus(s); if (onStatusChange) onStatusChange(s); }
   return (
     <div className="map-wrapper">
       <Map
@@ -199,7 +201,7 @@ export default function TrailMap({ activeFilters, singletrackOnly, onMapReady, o
         zoomControl={true}
       >
         {onMapReady && <MapController onMapReady={onMapReady} />}
-        <TrailLayer activeFilters={activeFilters} singletrackOnly={singletrackOnly} onStatusChange={handleStatus} />
+        <TrailLayer activeFilters={activeFilters} singletrackOnly={singletrackOnly} onStatusChange={setStatus} />
       </Map>
       <div className="map-status">
         {status.type === 'loading' && <div className="status-badge loading"><span className="spinner" /> Loading trails...</div>}
