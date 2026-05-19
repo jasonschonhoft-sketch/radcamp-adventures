@@ -10,17 +10,17 @@ export const GRAVEL_SURFACES = new Set(['gravel', 'unpaved', 'compacted', 'fine_
 export const ACTIVITY_CONFIG = {
   hiking: {
     label: 'Hiking',
-    color: '#4CAF50',
+    color: '#22c55e',
     weight: 2,
   },
   mountain_bike: {
     label: 'MTB',
-    color: '#2979FF',
+    color: '#3b82f6',
     weight: 2,
   },
   ebike: {
     label: 'E-Bike',
-    color: '#76FF03',
+    color: '#84cc16',
     weight: 2,
     note: 'All trails where bikes are permitted',
   },
@@ -32,35 +32,35 @@ export const ACTIVITY_CONFIG = {
   },
   road_bike: {
     label: 'Road Bike',
-    color: '#6366f1',
+    color: '#f97316',
     weight: 2,
     note: 'Paved surfaces only',
   },
   gravel_bike: {
     label: 'Gravel Bike',
-    color: '#f59e0b',
+    color: '#eab308',
     weight: 2,
     note: 'Gravel and unpaved surfaces',
   },
   dirt_bike: {
     label: 'Moto',
-    color: '#FF5722',
+    color: '#ef4444',
     weight: 2.5,
   },
   edirt_bike: {
     label: 'E-Moto',
-    color: '#E040FB',
+    color: '#a855f7',
     weight: 2.5,
     note: 'Same access as moto',
   },
   ohv: {
     label: 'UTV / 4x4',
-    color: '#FFB300',
+    color: '#f59e0b',
     weight: 2.5,
   },
   snowmobile: {
     label: 'Snowmobile',
-    color: '#94a3b8',
+    color: '#e2e8f0',
     weight: 2,
   },
 };
