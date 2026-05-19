@@ -420,7 +420,7 @@ html, body, #root {
   max-height: 90vh;
   overflow-y: auto;
 }
-.welcome-header { text-align: center; margin-bottom: 28px; }
+.welcome-header { text-align: center; margin-bottom: 16px; }
 .welcome-icon { font-size: 30px; display: block; margin-bottom: 12px; color: var(--accent); }
 .welcome-title { font-size: 20px; font-weight: 700; color: var(--text-pri); margin: 0 0 8px; }
 .welcome-sub { font-size: 13px; color: var(--text-sec); margin: 0; }
@@ -569,8 +569,8 @@ html, body, #root {
   display: block;
 }
 .welcome-logo {
-  height: 140px;
+  height: 120px;
   width: auto;
   display: block;
-  margin: 0 auto 16px;
+  margin: 0 auto 8px;
 }
