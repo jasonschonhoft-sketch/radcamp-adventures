@@ -47,7 +47,7 @@ html, body, #root {
 .map-wrapper { flex: 1; position: relative; overflow: hidden; background: #000; }
 .map-wrapper > div { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; }
 
-.map-status { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 100; pointer-events: none; white-space: nowrap; }
+.map-status { position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%); z-index: 100; pointer-events: none; white-space: nowrap; }
 
 .status-badge {
   padding: 6px 14px;
