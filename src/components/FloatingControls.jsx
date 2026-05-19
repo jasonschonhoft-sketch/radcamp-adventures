@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useMapsLibrary } from '@vis.gl/react-google-maps';
 import { ACTIVITY_CONFIG } from '../config';
 
@@ -215,13 +216,14 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
         </button>
       </div>
 
-      {/* Mobile: full-screen overlay */}
-      {mobileOpen && (
+      {/* Mobile: full-screen overlay — portalled to body to escape overflow:hidden */}
+      {mobileOpen && createPortal(
         <div className="fc-mobile-overlay" onClick={() => setMobileOpen(false)}>
           <aside className="fc-sidebar fc-sidebar-mobile" onClick={e => e.stopPropagation()}>
             {sidebarContent}
           </aside>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
