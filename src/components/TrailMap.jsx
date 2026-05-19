@@ -1,0 +1,256 @@
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { Map, useMap } from '@vis.gl/react-google-maps';
+import { ACTIVITY_CONFIG, ACTIVITY_KEYS, COTREX_URL, PAVED_SURFACES } from '../config';
+import { renderIconHtml } from '../icons';
+
+const COLORADO_CENTER = { lat: 39.0, lng: -105.5 };
+const MIN_ZOOM_FOR_TRAILS = 9;
+const MAX_RECORDS = 2000;
+
+function getTrailActivities(props) {
+  const acts = [];
+  const isPaved = PAVED_SURFACES.has((props.surface || '').toLowerCase());
+
+  if (props.hiking === 'yes') acts.push('hiking');
+
+  if (props.bike === 'yes') {
+    // e-bike: all bike-permitted trails (superset)
+    acts.push('ebike');
+    // mountain bike: off-road only
+    if (!isPaved) acts.push('bike');
+    // bike path: paved only
+    if (isPaved) acts.push('bike_path');
+  }
+
+  if (props.motorcycle === 'yes') {
+    acts.push('motorcycle');
+    acts.push('emoto');
+  }
+
+  if (props.atv === 'yes' || props.ohv_gt_50 === 'yes') acts.push('ohv');
+  if (props.snowmobile === 'yes') acts.push('snowmobile');
+
+  return acts;
+}
+
+async function fetchTrailsInBounds(bounds) {
+  const geometry = JSON.stringify({
+    xmin: bounds.west,
+    ymin: bounds.south,
+    xmax: bounds.east,
+    ymax: bounds.north,
+    spatialReference: { wkid: 4326 },
+  });
+
+  const params = new URLSearchParams({
+    where: '1=1',
+    geometry,
+    geometryType: 'esriGeometryEnvelope',
+    spatialRel: 'esriSpatialRelIntersects',
+    inSR: '4326',
+    outSR: '4326',
+    outFields: 'name,hiking,bike,motorcycle,atv,ohv_gt_50,snowmobile,surface',
+    f: 'geojson',
+    resultRecordCount: MAX_RECORDS,
+  });
+
+  const res = await fetch(`${COTREX_URL}?${params}`);
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  const data = await res.json();
+  return {
+    features: data.features || [],
+    exceeded: data.properties?.exceededTransferLimit === true,
+  };
+}
+
+function TrailLayer({ activeFilters, onStatusChange }) {
+  const map = useMap();
+  const polylinesRef = useRef({});
+  const activeFiltersRef = useRef(activeFilters);
+  const debounceRef = useRef(null);
+
+  useEffect(() => {
+    activeFiltersRef.current = activeFilters;
+  });
+
+  // Update polyline visibility when filters change (no re-fetch needed)
+  useEffect(() => {
+    if (!map) return;
+    ACTIVITY_KEYS.forEach(activity => {
+      const visible = !!activeFilters[activity];
+      (polylinesRef.current[activity] || []).forEach(p =>
+        p.setMap(visible ? map : null)
+      );
+    });
+  }, [activeFilters, map]);
+
+  const loadTrails = useCallback(async () => {
+    if (!map) return;
+
+    const zoom = map.getZoom();
+    if (zoom < MIN_ZOOM_FOR_TRAILS) {
+      ACTIVITY_KEYS.forEach(activity => {
+        (polylinesRef.current[activity] || []).forEach(p => p.setMap(null));
+        polylinesRef.current[activity] = [];
+      });
+      onStatusChange({ type: 'zoom', zoom });
+      return;
+    }
+
+    const bounds = map.getBounds();
+    if (!bounds) return;
+    const ne = bounds.getNorthEast();
+    const sw = bounds.getSouthWest();
+
+    onStatusChange({ type: 'loading' });
+
+    try {
+      const { features, exceeded } = await fetchTrailsInBounds({
+        north: ne.lat(),
+        south: sw.lat(),
+        east: ne.lng(),
+        west: sw.lng(),
+      });
+
+      // Clear old polylines
+      ACTIVITY_KEYS.forEach(activity => {
+        (polylinesRef.current[activity] || []).forEach(p => p.setMap(null));
+        polylinesRef.current[activity] = [];
+      });
+
+      // Build new polylines
+      features.forEach(feature => {
+        const { geometry, properties } = feature;
+        if (!geometry) return;
+
+        const activities = getTrailActivities(properties);
+        if (activities.length === 0) return;
+
+        const coordSets =
+          geometry.type === 'MultiLineString'
+            ? geometry.coordinates
+            : [geometry.coordinates];
+
+        activities.forEach(activity => {
+          const cfg = ACTIVITY_CONFIG[activity];
+          if (!cfg) return;
+          const visible = !!activeFiltersRef.current[activity];
+
+          coordSets.forEach(coords => {
+            const polyline = new google.maps.Polyline({
+              path: coords.map(([lng, lat]) => ({ lat, lng })),
+              strokeColor: cfg.color,
+              strokeOpacity: 0.9,
+              strokeWeight: cfg.weight,
+              map: visible ? map : null,
+              clickable: true,
+            });
+
+            polyline.addListener('click', e => {
+              const acts = getTrailActivities(properties);
+              const actRows = acts.map(a => {
+                const cfg = ACTIVITY_CONFIG[a];
+                if (!cfg) return '';
+                return `<div style="display:flex;align-items:center;gap:7px;margin:4px 0">
+                  ${renderIconHtml(a, cfg.color, 18, 16)}
+                  <span style="font-size:12px;font-weight:600;color:${cfg.color}">${cfg.label}</span>
+                </div>`;
+              }).join('');
+              new google.maps.InfoWindow({
+                content: `
+                  <div style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;padding:6px 2px;min-width:160px">
+                    <div style="font-size:13px;font-weight:700;color:#111;padding-bottom:6px;margin-bottom:4px;border-bottom:1px solid #eee">
+                      ${properties.name || 'Unnamed Trail'}
+                    </div>
+                    ${actRows}
+                    ${properties.surface
+                      ? `<div style="margin-top:6px;padding-top:5px;border-top:1px solid #f0f0f0;font-size:10px;color:#999;text-transform:capitalize">
+                           Surface: ${properties.surface}
+                         </div>`
+                      : ''}
+                  </div>`,
+                position: e.latLng,
+              }).open(map);
+            });
+
+            if (!polylinesRef.current[activity]) {
+              polylinesRef.current[activity] = [];
+            }
+            polylinesRef.current[activity].push(polyline);
+          });
+        });
+      });
+
+      onStatusChange({ type: 'loaded', count: features.length, exceeded });
+    } catch (err) {
+      console.error('Trail load error:', err);
+      onStatusChange({ type: 'error' });
+    }
+  }, [map, onStatusChange]);
+
+  useEffect(() => {
+    if (!map) return;
+
+    const listener = map.addListener('idle', () => {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(loadTrails, 400);
+    });
+
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(loadTrails, 600);
+
+    return () => {
+      google.maps.event.removeListener(listener);
+      clearTimeout(debounceRef.current);
+      ACTIVITY_KEYS.forEach(activity => {
+        (polylinesRef.current[activity] || []).forEach(p => p.setMap(null));
+      });
+    };
+  }, [map, loadTrails]);
+
+  return null;
+}
+
+export default function TrailMap({ activeFilters }) {
+  const [status, setStatus] = useState({ type: 'idle' });
+
+  return (
+    <div className="map-wrapper">
+      <Map
+        defaultCenter={COLORADO_CENTER}
+        defaultZoom={10}
+        gestureHandling="greedy"
+        mapTypeId="hybrid"
+        mapTypeControl={true}
+        fullscreenControl={false}
+        streetViewControl={false}
+      >
+        <TrailLayer activeFilters={activeFilters} onStatusChange={setStatus} />
+      </Map>
+
+      <div className="map-status">
+        {status.type === 'loading' && (
+          <div className="status-badge loading">
+            <span className="spinner" /> Loading trails...
+          </div>
+        )}
+        {status.type === 'loaded' && (
+          <div className="status-badge loaded">
+            {status.count.toLocaleString()} trail segments
+            {status.exceeded && ' — zoom in for more'}
+          </div>
+        )}
+        {status.type === 'zoom' && (
+          <div className="status-badge zoom-hint">
+            Zoom in to see trails
+          </div>
+        )}
+        {status.type === 'error' && (
+          <div className="status-badge error">
+            Failed to load trails
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
