@@ -131,7 +131,9 @@ html, body, #root {
 }
 .gm-style .gm-style-iw-d { overflow: hidden !important; }
 .gm-style .gm-style-iw-t::after { background: #0f1117 !important; }
-.gm-style .gm-style-iw-chr { display: none !important; }
+.gm-style .gm-style-iw-chr { display: flex !important; justify-content: flex-end; }
+.gm-style .gm-style-iw-chr button { opacity: 1 !important; width: 28px !important; height: 28px !important; }
+.gm-style .gm-style-iw-chr button span { background-color: #8a9bb0 !important; width: 12px !important; height: 12px !important; }
 
 /* ── Floating controls ───────────────────────────────────────── */
 .floating-controls {
