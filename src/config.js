@@ -11,7 +11,7 @@ export const ACTIVITY_CONFIG = {
     weight: 2,
   },
   bike: {
-    label: 'Mountain Bike',
+    label: 'MTB',
     color: '#2979FF',
     weight: 2,
   },

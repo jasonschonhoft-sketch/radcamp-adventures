@@ -4,7 +4,7 @@ const ACTIVITY_KEYS = ['hiking', 'mountain_bike', 'ebike', 'bike_path', 'dirt_bi
 
 const ACTIVITY_CONFIG = {
   hiking: { color: '#22c55e', label: 'Hiking' },
-  mountain_bike: { color: '#3b82f6', label: 'Mountain Bike' },
+  mountain_bike: { color: '#3b82f6', label: 'MTB' },
   ebike: { color: '#a855f7', label: 'E-Bike', note: 'Class 1/2' },
   bike_path: { color: '#06b6d4', label: 'Bike Path', note: 'Paved' },
   dirt_bike: { color: '#f97316', label: 'Dirt Bike' },
