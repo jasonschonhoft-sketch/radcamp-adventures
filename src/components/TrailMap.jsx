@@ -182,8 +182,9 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange }) {
   return null;
 }
 
-export default function TrailMap({ activeFilters, singletrackOnly, onMapReady }) {
+export default function TrailMap({ activeFilters, singletrackOnly, onMapReady, onStatusChange }) {
   const [status, setStatus] = useState({ type: 'idle' });
+  function handleStatus(s) { setStatus(s); if (onStatusChange) onStatusChange(s); }
   return (
     <div className="map-wrapper">
       <Map
@@ -198,7 +199,7 @@ export default function TrailMap({ activeFilters, singletrackOnly, onMapReady })
         zoomControl={true}
       >
         {onMapReady && <MapController onMapReady={onMapReady} />}
-        <TrailLayer activeFilters={activeFilters} singletrackOnly={singletrackOnly} onStatusChange={setStatus} />
+        <TrailLayer activeFilters={activeFilters} singletrackOnly={singletrackOnly} onStatusChange={handleStatus} />
       </Map>
       <div className="map-status">
         {status.type === 'loading' && <div className="status-badge loading"><span className="spinner" /> Loading trails...</div>}

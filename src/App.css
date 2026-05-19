@@ -47,7 +47,7 @@ html, body, #root {
 .map-wrapper { flex: 1; position: relative; overflow: hidden; background: #000; }
 .map-wrapper > div { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; }
 
-.map-status { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 200; pointer-events: none; white-space: nowrap; }
+.map-status { display: none; }
 
 .status-badge {
   padding: 6px 14px;
@@ -559,3 +559,6 @@ html, body, #root {
 .map-type-btn:first-child { border-right: 1px solid rgba(255,255,255,0.1); }
 .map-type-btn.active { background: rgba(255,255,255,0.12); color: #fff; }
 .map-type-btn:hover:not(.active) { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.8); }
+
+.header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.header-trail-count { font-size: 10px; color: var(--text-sec); letter-spacing: 0.3px; }

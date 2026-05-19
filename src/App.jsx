@@ -91,6 +91,7 @@ export default function App() {
   const [activeFilters, setActiveFilters] = useState(() => makeFilters(startActivity));
   const [modalVisible, setModalVisible] = useState(showModal);
   const [singletrackOnly, setSingletrackOnly] = useState(false);
+  const [trailCount, setTrailCount] = useState(null);
   const mapRef = useRef(null);
 
   function toggleFilter(activity) {
@@ -150,7 +151,10 @@ export default function App() {
             <span className="brand-name">RadCamp Adventures</span>
           </div>
           <SearchBar onPlaceSelect={handlePlaceSelect} />
-          <span className="header-tagline">Colorado Trail Explorer</span>
+          <div className="header-right">
+            <span className="header-tagline">Colorado Trail Explorer</span>
+            {trailCount !== null && <span className="header-trail-count">{trailCount.toLocaleString()} segments</span>}
+          </div>
         </header>
 
         <main className="app-main">
@@ -161,7 +165,7 @@ export default function App() {
             onToggleSingletrack={() => setSingletrackOnly(v => !v)}
             mapRef={mapRef}
           />
-          <TrailMap activeFilters={activeFilters} singletrackOnly={singletrackOnly} onMapReady={handleMapReady} />
+          <TrailMap activeFilters={activeFilters} singletrackOnly={singletrackOnly} onMapReady={handleMapReady} onStatusChange={s => { if (s.type === "loaded") setTrailCount(s.count); }} />
           <WeatherWidget mapRef={mapRef} />
         </main>
       </div>
