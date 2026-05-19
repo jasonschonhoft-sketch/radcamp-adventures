@@ -3,6 +3,7 @@ import { APIProvider } from '@vis.gl/react-google-maps';
 import TrailMap from './components/TrailMap';
 import FloatingControls from './components/FloatingControls';
 import SearchBar from './components/SearchBar';
+import WeatherWidget from './components/WeatherWidget';
 import { ACTIVITY_KEYS, ACTIVITY_CONFIG } from './config';
 import './App.css';
 
@@ -161,6 +162,7 @@ export default function App() {
             mapRef={mapRef}
           />
           <TrailMap activeFilters={activeFilters} singletrackOnly={singletrackOnly} onMapReady={handleMapReady} />
+          <WeatherWidget mapRef={mapRef} />
         </main>
       </div>
     </APIProvider>

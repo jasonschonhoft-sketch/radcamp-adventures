@@ -269,6 +269,77 @@ html, body, #root {
 .fc-sub-toggle.active .fc-label { color: rgba(255,255,255,0.75); }
 .fc-sub-dash { font-size: 11px; color: rgba(255,255,255,0.2); flex-shrink: 0; width: 7px; }
 
+/* ── Weather widget ──────────────────────────────────────────── */
+.weather-widget {
+  position: absolute;
+  bottom: 40px;
+  right: 12px;
+  z-index: 40;
+  background: rgba(10,11,15,0.92);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 10px 14px;
+  backdrop-filter: blur(10px);
+  min-width: 120px;
+  pointer-events: none;
+}
+.weather-temp {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-pri);
+  line-height: 1;
+  margin-bottom: 3px;
+}
+.weather-label {
+  font-size: 11px;
+  color: var(--text-sec);
+  margin-bottom: 6px;
+}
+.weather-meta {
+  font-size: 10px;
+  color: rgba(255,255,255,0.3);
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.weather-precip {
+  font-size: 10px;
+  color: rgba(255,255,255,0.3);
+  margin-top: 3px;
+}
+.weather-loading-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+}
+.weather-spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.1);
+  border-top-color: rgba(255,255,255,0.4);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: block;
+}
+
+/* ── Mobile bottom sheet for filter dropdown ─────────────────── */
+@media (max-width: 640px) {
+  .fc-dropdown {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    border-radius: 16px 16px 0 0;
+    min-width: unset;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+}
+
 /* ── API key error ───────────────────────────────────────────── */
 .api-key-error { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg-dark); padding: 24px; }
 .api-key-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 40px; max-width: 480px; width: 100%; }
