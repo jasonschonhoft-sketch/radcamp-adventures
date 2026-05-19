@@ -30,78 +30,18 @@ function getTrailActivities(props) {
   const isTrail = props.type === 'Trail';
   const isRoad = props.type === 'Road';
   const isHighwayVehicle = props.highway_ve === 'yes';
-
   if (props.hiking === 'yes') acts.push('hiking');
-
   if (props.bike === 'yes') {
     acts.push('ebike');
-    if (isTrail) {
-      acts.push('mountain_bike');
-    } else if (isRoad && isPaved) {
-      acts.push('bike_path');
-      acts.push('road_bike')
-/clear
-cat > /Users/jtschonhoft/radcamp-adventures/radcamp-app/src/components/TrailMap.jsx << 'EOF'
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { Map, useMap } from '@vis.gl/react-google-maps';
-import { ACTIVITY_CONFIG, ACTIVITY_KEYS, COTREX_URL, PAVED_SURFACES } from '../config';
-
-const SURFACE_LABELS = {
-  paved: 'Paved', concrete: 'Paved', boardwalk: 'Paved',
-  dirt: 'Dirt', gravel: 'Gravel', unpaved: 'Unpaved',
-  compacted: 'Compacted', fine_gravel: 'Gravel', dirt_road: 'Dirt Road', rock: 'Rock',
-};
-
-function getSurfaceLabel(surface) {
-  if (!surface || !surface.trim()) return null;
-  return SURFACE_LABELS[surface.toLowerCase().trim()] ?? surface;
-}
-
-function MapController({ onMapReady }) {
-  const map = useMap();
-  useEffect(() => { if (map) onMapReady(map); }, [map, onMapReady]);
-  return null;
-}
-
-const COLORADO_CENTER = { lat: 39.0, lng: -105.5 };
-const MIN_ZOOM_FOR_TRAILS = 9;
-const MAX_RECORDS = 2000;
-
-function getTrailActivities(props) {
-  const acts = [];
-  const surface = (props.surface || '').toLowerCase();
-  const isPaved = PAVED_SURFACES.has(surface);
-  const isTrail = props.type === 'Trail';
-  const isRoad = props.type === 'Road';
-  const isHighwayVehicle = props.highway_ve === 'yes';
-
-  if (props.hiking === 'yes') acts.push('hiking');
-
-  if (props.bike === 'yes') {
-    acts.push('ebike');
-    if (isTrail) {
-      acts.push('mountain_bike');
-    } else if (isRoad && isPaved) {
-      acts.push('bike_path');
-      acts.push('road_bike');
-    } else if (isRoad && !isHighwayVehicle) {
-      acts.push('gravel_bike');
-    } else if (isPaved) {
-      acts.push('bike_path');
-      acts.push('road_bike');
-    } else {
-      acts.push('mountain_bike');
-    }
+    if (isTrail) { acts.push('mountain_bike'); }
+    else if (isRoad && isPaved) { acts.push('bike_path'); acts.push('road_bike'); }
+    else if (isRoad && !isHighwayVehicle) { acts.push('gravel_bike'); }
+    else if (isPaved) { acts.push('bike_path'); acts.push('road_bike'); }
+    else { acts.push('mountain_bike'); }
   }
-
-  if (props.motorcycle === 'yes') {
-    acts.push('dirt_bike');
-    acts.push('edirt_bike');
-  }
-
+  if (props.motorcycle === 'yes') { acts.push('dirt_bike'); acts.push('edirt_bike'); }
   if (props.atv === 'yes' || props.ohv_gt_50 === 'yes') acts.push('ohv');
   if (props.snowmobile === 'yes') acts.push('snowmobile');
-
   return acts;
 }
 
@@ -206,11 +146,7 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange }) {
                 return `<div style="display:flex;align-items:center;gap:8px;padding:2px 0"><div style="width:6px;height:6px;border-radius:50%;background:${c.color};flex-shrink:0"></div><span style="font-size:12px;color:#8a9bb0;font-weight:500">${c.label}</span></div>`;
               }).join('');
               new google.maps.InfoWindow({
-                content: `<div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;padding:12px 14px;min-width:180px;max-width:240px">
-                  <div style="font-size:13px;font-weight:700;color:#e8edf5;margin-bottom:8px;line-height:1.3">${properties.name || 'Unnamed Trail'}</div>
-                  <div>${actRows}</div>
-                  ${surfaceLabel ? `<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.07);font-size:11px;color:rgba(255,255,255,0.35)">${surfaceLabel}</div>` : ''}
-                </div>`,
+                content: `<div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;padding:12px 14px;min-width:180px;max-width:240px"><div style="font-size:13px;font-weight:700;color:#e8edf5;margin-bottom:8px;line-height:1.3">${properties.name || 'Unnamed Trail'}</div><div>${actRows}</div>${surfaceLabel ? `<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.07);font-size:11px;color:rgba(255,255,255,0.35)">${surfaceLabel}</div>` : ''}</div>`,
                 position: e.latLng,
               }).open(map);
             });
@@ -248,7 +184,6 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange }) {
 
 export default function TrailMap({ activeFilters, singletrackOnly, onMapReady }) {
   const [status, setStatus] = useState({ type: 'idle' });
-
   return (
     <div className="map-wrapper">
       <Map
@@ -264,7 +199,6 @@ export default function TrailMap({ activeFilters, singletrackOnly, onMapReady })
         {onMapReady && <MapController onMapReady={onMapReady} />}
         <TrailLayer activeFilters={activeFilters} singletrackOnly={singletrackOnly} onStatusChange={setStatus} />
       </Map>
-
       <div className="map-status">
         {status.type === 'loading' && <div className="status-badge loading"><span className="spinner" /> Loading trails...</div>}
         {status.type === 'loaded' && <div className="status-badge loaded">{status.count.toLocaleString()} trail segments{status.exceeded && ' — zoom in for more'}</div>}
