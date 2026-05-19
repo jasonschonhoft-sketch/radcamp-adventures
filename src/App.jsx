@@ -57,7 +57,7 @@ function WelcomeModal({ onSelect }) {
     <div className="welcome-overlay">
       <div className="welcome-modal">
         <div className="welcome-header">
-          <span className="welcome-icon">&#9968;</span>
+          <img src="/logo.svg" alt="RadCamp" className="welcome-logo" />
           <h2 className="welcome-title">What are you looking for?</h2>
           <p className="welcome-sub">Select an activity to show matching Colorado trails</p>
         </div>
@@ -147,7 +147,7 @@ export default function App() {
       <div className="app">
         <header className="app-header">
           <div className="header-brand">
-            <span className="brand-icon">&#9968;</span>
+            <img src="/logo.svg" alt="RadCamp" className="brand-logo" />
             <span className="brand-name">RadCamp Adventures</span>
           </div>
           <SearchBar onPlaceSelect={handlePlaceSelect} />
