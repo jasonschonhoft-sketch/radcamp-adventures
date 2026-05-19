@@ -20,7 +20,7 @@ export const ACTIVITY_CONFIG = {
   },
   ebike: {
     label: 'E-Bike',
-    color: '#fbbf24',
+    color: '#facc15',
     weight: 2,
     note: 'All trails where bikes are permitted',
   },
@@ -38,7 +38,7 @@ export const ACTIVITY_CONFIG = {
   },
   gravel_bike: {
     label: 'Gravel Bike',
-    color: '#d946ef',
+    color: '#06b6d4',
     weight: 2,
     note: 'Gravel and unpaved surfaces',
   },
@@ -55,12 +55,12 @@ export const ACTIVITY_CONFIG = {
   },
   ohv: {
     label: 'UTV / 4x4',
-    color: '#fb923c',
+    color: '#f59e0b',
     weight: 2.5,
   },
   snowmobile: {
     label: 'Snowmobile',
-    color: '#e2e8f0',
+    color: '#ffffff',
     weight: 2,
   },
 };
