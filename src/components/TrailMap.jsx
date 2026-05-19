@@ -266,6 +266,7 @@ export default function TrailMap({ activeFilters, singletrackOnly, onMapReady })
         mapTypeControl={true}
         fullscreenControl={false}
         streetViewControl={false}
+        zoomControl={true}
       >
         {onMapReady && <MapController onMapReady={onMapReady} />}
         <TrailLayer activeFilters={activeFilters} singletrackOnly={singletrackOnly} onStatusChange={setStatus} />
