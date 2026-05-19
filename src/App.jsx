@@ -114,7 +114,9 @@ export default function App() {
   const [modalVisible, setModalVisible] = useState(showModal);
   const [singletrackOnly, setSingletrackOnly] = useState(false);
   const [campActive, setCampActive] = useState(false);
+  const [routeMode, setRouteMode] = useState(false);
   const mapRef = useRef(null);
+  const addToRouteRef = useRef(null);
 
   const toggleFilter = useCallback((activity) => {
     setActiveFilters(prev => ({ ...prev, [activity]: !prev[activity] }));
@@ -191,8 +193,10 @@ export default function App() {
             mapRef={mapRef}
             externalCampActive={campActive}
             onCampChange={setCampActive}
+            onRouteModeChange={setRouteMode}
+            onAddToRoute={fn => { addToRouteRef.current = fn; }}
           />
-          <TrailMap activeFilters={activeFilters} singletrackOnly={singletrackOnly} onMapReady={handleMapReady} />
+          <TrailMap activeFilters={activeFilters} singletrackOnly={singletrackOnly} onMapReady={handleMapReady} routeMode={routeMode} addToRouteRef={addToRouteRef} />
           <WeatherWidget mapRef={mapRef} />
         </main>
       </div>

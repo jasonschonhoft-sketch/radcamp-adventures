@@ -107,7 +107,7 @@ async function fetchTrailsInBounds(bounds) {
   return { features: data.features || [], exceeded: data.properties?.exceededTransferLimit === true };
 }
 
-function TrailLayer({ activeFilters, singletrackOnly, onStatusChange }) {
+function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode, addToRouteRef }) {
   const map = useMap();
   const polylinesRef = useRef({});
   const activeFiltersRef = useRef(activeFilters);
@@ -115,6 +115,8 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange }) {
   const debounceRef = useRef(null);
   const activeInfoWindowRef = useRef(null);
   const activePolylinesRef = useRef([]);
+  const routeModeRef = useRef(routeMode);
+  useEffect(() => { routeModeRef.current = routeMode; }, [routeMode]);
 
   useEffect(() => {
     activeFiltersRef.current = activeFilters;
@@ -327,7 +329,7 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange }) {
   return null;
 }
 
-export default function TrailMap({ activeFilters, singletrackOnly, onMapReady }) {
+export default function TrailMap({ activeFilters, singletrackOnly, onMapReady, routeMode, addToRouteRef }) {
   const [status, setStatus] = useState({ type: 'idle' });
   return (
     <div className="map-wrapper">
@@ -337,12 +339,13 @@ export default function TrailMap({ activeFilters, singletrackOnly, onMapReady })
         gestureHandling="greedy"
         mapTypeId="hybrid"
         mapTypeControl={true}
+        mapTypeControlOptions={{ position: window.google?.maps?.ControlPosition?.BOTTOM_LEFT ?? 6 }}
         fullscreenControl={false}
         streetViewControl={false}
         zoomControl={true}
       >
         {onMapReady && <MapController onMapReady={onMapReady} />}
-        <TrailLayer activeFilters={activeFilters} singletrackOnly={singletrackOnly} onStatusChange={setStatus} />
+        <TrailLayer activeFilters={activeFilters} singletrackOnly={singletrackOnly} onStatusChange={setStatus} routeMode={routeMode} addToRouteRef={addToRouteRef} />
       </Map>
       <div className="map-status">
         {status.type === 'loading' && <div className="status-badge loading"><span className="spinner" /> Loading trails...</div>}
