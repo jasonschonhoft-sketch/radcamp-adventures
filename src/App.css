@@ -137,7 +137,7 @@ html, body, #root {
 .floating-controls {
   position: absolute;
   top: 16px;
-  left: 16px;
+  left: 236px;
   z-index: 50;
   display: flex;
   flex-direction: column;
@@ -289,6 +289,7 @@ html, body, #root {
 
 /* Mobile: hide desktop sidebar, show filter btn */
 @media (max-width: 640px) {
+  .floating-controls { left: 16px; }
   .fc-sidebar-desktop { display: none; }
   .fc-mobile-only { display: flex !important; }
 
