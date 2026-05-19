@@ -78,11 +78,11 @@ function WelcomeModal({ onSelect, onCamp }) {
             );
           })}
         </div>
-        <button className="welcome-camp" onClick={() => { onSelect(null); onCamp && onCamp(true); }}>
-          ⛺ Also show campgrounds
-        </button>
         <button className="welcome-skip" onClick={() => onSelect(null)}>
           Show all trails
+        </button>
+        <button className="welcome-camp" onClick={() => { onSelect(null); onCamp && onCamp(true); }}>
+          Also show campgrounds
         </button>
       </div>
     </div>
