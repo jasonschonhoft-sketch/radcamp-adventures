@@ -161,7 +161,7 @@ export default function App() {
             onToggleSingletrack={() => setSingletrackOnly(v => !v)}
             mapRef={mapRef}
           />
-          <TrailMap activeFilters={activeFilters} singletrackOnly={singletrackOnly} onMapReady={handleMapReady} onStatusChange={s => { if (s.type === "loaded") setTrailCount(s.count); }} />
+          <TrailMap activeFilters={activeFilters} singletrackOnly={singletrackOnly} onMapReady={handleMapReady} />
           <WeatherWidget mapRef={mapRef} />
         </main>
       </div>
