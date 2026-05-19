@@ -74,7 +74,6 @@ function WelcomeModal({ onSelect }) {
               >
                 <div className="welcome-card-dot" />
                 <span className="welcome-card-label">{cfg.label}</span>
-                <span className="welcome-card-desc">{desc}</span>
               </button>
             );
           })}
