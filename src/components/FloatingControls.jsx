@@ -4,20 +4,21 @@ import { useMapsLibrary } from '@vis.gl/react-google-maps';
 import { ACTIVITY_CONFIG } from '../config';
 
 const DISPLAY_KEYS = [
+  'dirt_bike', 'ohv', 'edirt_bike',
   'hiking', 'mountain_bike', 'bike_path', 'road_bike', 'gravel_bike',
-  'ebike', 'dirt_bike', 'ohv', 'edirt_bike', 'snowmobile',
+  'ebike', 'snowmobile',
 ];
 
 const SECTION_LABELS = {
-  hiking: null,
+  dirt_bike: 'MOTORIZED',
+  ohv: null,
+  edirt_bike: null,
+  hiking: 'OTHER',
   mountain_bike: 'CYCLING',
   bike_path: null,
   road_bike: null,
   gravel_bike: null,
   ebike: null,
-  dirt_bike: 'MOTORIZED',
-  ohv: null,
-  edirt_bike: null,
   snowmobile: 'WINTER',
 };
 
