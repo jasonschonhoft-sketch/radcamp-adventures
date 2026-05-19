@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useMapsLibrary } from '@vis.gl/react-google-maps';
 import { ACTIVITY_CONFIG } from '../config';
 
 const DISPLAY_KEYS = [
@@ -19,10 +20,16 @@ const SECTION_LABELS = {
   snowmobile: 'WINTER',
 };
 
+const SHOP_QUERIES = ['bicycle shop', 'motorcycle shop', 'snowmobile dealer'];
+
 export default function FloatingControls({ activeFilters, onToggle, singletrackOnly, onToggleSingletrack, mapRef }) {
   const [filterOpen, setFilterOpen] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [shopsActive, setShopsActive] = useState(false);
+  const [shopsLoading, setShopsLoading] = useState(false);
+  const shopMarkersRef = useRef([]);
   const dropdownRef = useRef(null);
+  const placesLib = useMapsLibrary('places');
 
   useEffect(() => {
     if (!filterOpen) return;
@@ -48,6 +55,70 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
       () => setLocating(false),
       { enableHighAccuracy: true, timeout: 8000 }
     );
+  }
+
+  function clearShopMarkers() {
+    shopMarkersRef.current.forEach(m => m.setMap(null));
+    shopMarkersRef.current = [];
+  }
+
+  useEffect(() => () => clearShopMarkers(), []);
+
+  function handleShops() {
+    if (shopsActive) {
+      clearShopMarkers();
+      setShopsActive(false);
+      return;
+    }
+    if (!placesLib || !mapRef.current) return;
+    setShopsLoading(true);
+    const map = mapRef.current;
+    const center = map.getCenter();
+    const service = new placesLib.PlacesService(map);
+    let pending = SHOP_QUERIES.length;
+    const all = [];
+
+    SHOP_QUERIES.forEach(query => {
+      service.textSearch({ location: center, radius: 80467, query }, (results, status) => {
+        if (status === placesLib.PlacesServiceStatus.OK && results) {
+          all.push(...results.slice(0, 5));
+        }
+        if (--pending === 0) {
+          setShopsLoading(false);
+          if (all.length === 0) return;
+          setShopsActive(true);
+          const seen = new Set();
+          all.forEach(place => {
+            if (seen.has(place.place_id) || !place.geometry?.location) return;
+            seen.add(place.place_id);
+            const marker = new google.maps.Marker({
+              position: place.geometry.location,
+              map,
+              icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: 8,
+                fillColor: '#e67e22',
+                fillOpacity: 0.92,
+                strokeColor: '#fff',
+                strokeWeight: 2,
+              },
+              title: place.name,
+              zIndex: 200,
+            });
+            marker.addListener('click', () => {
+              new google.maps.InfoWindow({
+                content: `<div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;padding:10px 12px;min-width:160px;max-width:220px">
+                  <div style="font-size:13px;font-weight:700;color:#e8edf5;margin-bottom:4px">${place.name}</div>
+                  <div style="font-size:11px;color:#8a9bb0;line-height:1.4">${place.vicinity || ''}</div>
+                  ${place.rating ? `<div style="font-size:11px;color:#e67e22;margin-top:5px">${place.rating}★ ${place.user_ratings_total ? `(${place.user_ratings_total})` : ''}</div>` : ''}
+                </div>`,
+              }).open(map, marker);
+            });
+            shopMarkersRef.current.push(marker);
+          });
+        }
+      });
+    });
   }
 
   function toggleAll() {
@@ -78,6 +149,20 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
             <line x1="12" y1="18" x2="12" y2="22"/>
             <line x1="2" y1="12" x2="6" y2="12"/>
             <line x1="18" y1="12" x2="22" y2="12"/>
+          </svg>
+        )}
+      </button>
+
+      {/* Nearby Shops */}
+      <button
+        className={`fc-btn${shopsActive ? ' fc-btn-on' : ''}${shopsLoading ? ' fc-btn-spin' : ''}`}
+        onClick={handleShops}
+        aria-label="Nearby shops"
+        title="Find nearby bike, moto & snowmobile shops"
+      >
+        {shopsLoading ? <span className="fc-spinner" /> : (
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
           </svg>
         )}
       </button>
