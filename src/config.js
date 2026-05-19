@@ -32,7 +32,7 @@ export const ACTIVITY_CONFIG = {
   },
   road_bike: {
     label: 'Road Bike',
-    color: '#ef4444',
+    color: '#6366f1',
     weight: 2,
     note: 'Paved surfaces only',
   },
@@ -54,7 +54,7 @@ export const ACTIVITY_CONFIG = {
     note: 'Same access as moto',
   },
   ohv: {
-    label: 'OHV / Side-by-Side',
+    label: 'UTV / SxS',
     color: '#FFB300',
     weight: 2.5,
   },
