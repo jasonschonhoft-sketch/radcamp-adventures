@@ -54,7 +54,7 @@ export const ACTIVITY_CONFIG = {
     note: 'Same access as moto',
   },
   ohv: {
-    label: 'UTV / SxS',
+    label: 'UTV / SxS / 4x4',
     color: '#FFB300',
     weight: 2.5,
   },
