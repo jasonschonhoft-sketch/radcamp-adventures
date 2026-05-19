@@ -26,7 +26,7 @@ export const ACTIVITY_CONFIG = {
   },
   bike_path: {
     label: 'Bike Path',
-    color: '#00E5FF',
+    color: '#06b6d4',
     weight: 2.5,
     note: 'Paved surfaces only',
   },
@@ -54,13 +54,13 @@ export const ACTIVITY_CONFIG = {
     note: 'Same access as moto',
   },
   ohv: {
-    label: 'UTV / SxS / 4x4',
+    label: 'UTV / 4x4',
     color: '#FFB300',
     weight: 2.5,
   },
   snowmobile: {
     label: 'Snowmobile',
-    color: '#00BCD4',
+    color: '#94a3b8',
     weight: 2,
   },
 };
