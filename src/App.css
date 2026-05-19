@@ -466,6 +466,7 @@ html, body, #root {
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .header-tagline { display: none; }
+  .header-brand { display: none; }
 }
 
 @media (max-width: 540px) {
