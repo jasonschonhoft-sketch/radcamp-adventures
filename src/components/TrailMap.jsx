@@ -71,7 +71,7 @@ function getTrailStyle(activity, props) {
 
   // Moto singletrack = dashed bright red
   if (isTrail && surface === 'dirt') {
-    return { color: '#22c55e', weight: 2, opacity: 0, dotted: true };
+    return { color: '#a3e635', weight: 2, opacity: 0, dotted: true };
   }
   // Moto doubletrack/road = solid lighter red
   if (activity === 'dirt_bike' && isRoad) {
