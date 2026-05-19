@@ -114,7 +114,7 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange }) {
       const visible = !!activeFilters[activity];
       (polylinesRef.current[activity] || []).forEach(p => {
         const show = visible && (
-          activity !== 'mountain_bike' || !singletrackOnly || p.__singletrack
+          activity !== 'dirt_bike' || !singletrackOnly || p.__singletrack
         );
         p.setMap(show ? map : null);
       });
@@ -182,7 +182,7 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange }) {
 
           coordSets.forEach(coords => {
             const showPolyline = visible && (
-              activity !== 'mountain_bike' || !singletrackOnlyRef.current || singletrack
+              activity !== 'dirt_bike' || !singletrackOnlyRef.current || singletrack
             );
             const polyline = new google.maps.Polyline({
               path: coords.map(([lng, lat]) => ({ lat, lng })),
