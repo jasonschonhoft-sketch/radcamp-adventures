@@ -61,10 +61,8 @@ export default function ActivityFilter({ activeFilters, onToggle }) {
                 aria-pressed={active}
                 title={config.note || config.label}
               >
-                <span className="filter-dot" />
                 <span className="filter-label">
                   {config.label}
-                  {config.note && <span className="filter-note"> *</span>}
                 </span>
                 <span className="filter-toggle">{active ? 'ON' : 'OFF'}</span>
               </button>
@@ -73,9 +71,6 @@ export default function ActivityFilter({ activeFilters, onToggle }) {
         })}
       </div>
 
-      <div className="filter-footer">
-        <span className="filter-footer-note">* Based on local trail access data</span>
-      </div>
     </div>
   );
 }
