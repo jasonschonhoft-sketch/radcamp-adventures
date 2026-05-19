@@ -28,7 +28,7 @@ const SECTION_LABELS = {
   snowmobile: 'WINTER',
 };
 
-export default function ActivityFilter({ activeFilters, onToggle }) {
+export default function ActivityFilter({ activeFilters, onToggle, isOpen, onClose }) {
   const allOn = ACTIVITY_KEYS.every(k => activeFilters[k]);
 
   function toggleAll() {
@@ -39,12 +39,17 @@ export default function ActivityFilter({ activeFilters, onToggle }) {
   }
 
   return (
-    <div className="activity-filter">
+    <div className={`activity-filter${isOpen ? ' open' : ''}`}>
       <div className="filter-header">
         <span className="filter-title">TRAIL TYPES</span>
-        <button className="filter-all-btn" onClick={toggleAll}>
-          {allOn ? 'Hide All' : 'Show All'}
-        </button>
+        <div className="filter-header-actions">
+          <button className="filter-all-btn" onClick={toggleAll}>
+            {allOn ? 'Hide All' : 'Show All'}
+          </button>
+          {onClose && (
+            <button className="filter-close-btn" onClick={onClose} aria-label="Close">✕</button>
+          )}
+        </div>
       </div>
 
       <div className="filter-list">

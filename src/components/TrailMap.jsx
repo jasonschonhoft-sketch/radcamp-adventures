@@ -1,7 +1,23 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Map, useMap } from '@vis.gl/react-google-maps';
 import { ACTIVITY_CONFIG, ACTIVITY_KEYS, COTREX_URL, PAVED_SURFACES } from '../config';
-import { renderIconHtml } from '../icons';
+
+const SURFACE_LABELS = {
+  paved: 'Paved', concrete: 'Paved', boardwalk: 'Paved',
+  dirt: 'Dirt', gravel: 'Gravel', unpaved: 'Unpaved',
+  compacted: 'Compacted', fine_gravel: 'Gravel', dirt_road: 'Dirt Road', rock: 'Rock',
+};
+
+function getSurfaceLabel(surface) {
+  if (!surface || !surface.trim()) return null;
+  return SURFACE_LABELS[surface.toLowerCase().trim()] ?? surface;
+}
+
+function MapController({ onMapReady }) {
+  const map = useMap();
+  useEffect(() => { if (map) onMapReady(map); }, [map, onMapReady]);
+  return null;
+}
 
 const COLORADO_CENTER = { lat: 39.0, lng: -105.5 };
 const MIN_ZOOM_FOR_TRAILS = 9;
@@ -171,28 +187,21 @@ function TrailLayer({ activeFilters, onStatusChange }) {
             });
 
             polyline.addListener('click', e => {
-              const acts = getTrailActivities(properties);
+              const acts = getTrailActivities(properties).filter(a => ACTIVITY_CONFIG[a]);
+              const surfaceLabel = getSurfaceLabel(properties.surface);
               const actRows = acts.map(a => {
-                const cfg = ACTIVITY_CONFIG[a];
-                if (!cfg) return '';
-                return `<div style="display:flex;align-items:center;gap:7px;margin:4px 0">
-                  ${renderIconHtml(a, cfg.color, 18, 16)}
-                  <span style="font-size:12px;font-weight:600;color:${cfg.color}">${cfg.label}</span>
+                const c = ACTIVITY_CONFIG[a];
+                return `<div style="display:flex;align-items:center;gap:8px;padding:2px 0">
+                  <div style="width:6px;height:6px;border-radius:50%;background:${c.color};flex-shrink:0"></div>
+                  <span style="font-size:12px;color:#8a9bb0;font-weight:500">${c.label}</span>
                 </div>`;
               }).join('');
               new google.maps.InfoWindow({
-                content: `
-                  <div style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;padding:6px 2px;min-width:160px">
-                    <div style="font-size:13px;font-weight:700;color:#111;padding-bottom:6px;margin-bottom:4px;border-bottom:1px solid #eee">
-                      ${properties.name || 'Unnamed Trail'}
-                    </div>
-                    ${actRows}
-                    ${properties.surface
-                      ? `<div style="margin-top:6px;padding-top:5px;border-top:1px solid #f0f0f0;font-size:10px;color:#999;text-transform:capitalize">
-                           Surface: ${properties.surface}
-                         </div>`
-                      : ''}
-                  </div>`,
+                content: `<div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;padding:12px 14px;min-width:180px;max-width:240px">
+                  <div style="font-size:13px;font-weight:700;color:#e8edf5;margin-bottom:8px;line-height:1.3">${properties.name || 'Unnamed Trail'}</div>
+                  <div>${actRows}</div>
+                  ${surfaceLabel ? `<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.07);font-size:11px;color:rgba(255,255,255,0.35)">${surfaceLabel}</div>` : ''}
+                </div>`,
                 position: e.latLng,
               }).open(map);
             });
@@ -235,7 +244,7 @@ function TrailLayer({ activeFilters, onStatusChange }) {
   return null;
 }
 
-export default function TrailMap({ activeFilters }) {
+export default function TrailMap({ activeFilters, onMapReady }) {
   const [status, setStatus] = useState({ type: 'idle' });
 
   return (
@@ -249,6 +258,7 @@ export default function TrailMap({ activeFilters }) {
         fullscreenControl={false}
         streetViewControl={false}
       >
+        {onMapReady && <MapController onMapReady={onMapReady} />}
         <TrailLayer activeFilters={activeFilters} onStatusChange={setStatus} />
       </Map>
 
