@@ -9,18 +9,7 @@ const DISPLAY_KEYS = [
   'ebike', 'horse', 'snowmobile',
 ];
 
-const SECTION_LABELS = {
-  dirt_bike: 'MOTORIZED',
-  ohv: null,
-  edirt_bike: null,
-  hiking: 'OTHER',
-  mountain_bike: 'CYCLING',
-  road_bike: null,
-  gravel_bike: null,
-  ebike: null,
-  horse: 'OTHER',
-  snowmobile: 'WINTER',
-};
+const SECTION_LABELS = {};
 
 const SHOP_QUERIES = ['bicycle shop', 'motorcycle shop', 'snowmobile dealer'];
 
@@ -105,13 +94,23 @@ function SidebarContent({ activeFilters, onToggle, singletrackOnly, onToggleSing
   );
 }
 
-export default function FloatingControls({ activeFilters, onToggle, singletrackOnly, onToggleSingletrack, mapRef }) {
+export default function FloatingControls({ activeFilters, onToggle, singletrackOnly, onToggleSingletrack, mapRef, externalCampActive, onCampChange }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [locating, setLocating] = useState(false);
   const [shopsActive, setShopsActive] = useState(false);
   const [shopsLoading, setShopsLoading] = useState(false);
   const shopMarkersRef = useRef([]);
-  const [campActive, setCampActive] = useState(false);
+  const [campActive, setCampActiveInternal] = useState(false);
+  function setCampActive(val) {
+    setCampActiveInternal(val);
+    if (onCampChange) onCampChange(val);
+  }
+  // Sync from external (e.g. welcome modal)
+  useEffect(() => {
+    if (externalCampActive && !campActive) {
+      handleCamp();
+    }
+  }, [externalCampActive]);
   const [campLoading, setCampLoading] = useState(false);
   const campMarkersRef = useRef([]);
   const placesLib = useMapsLibrary('places');

@@ -165,7 +165,7 @@ export default function App() {
             singletrackOnly={singletrackOnly}
             onToggleSingletrack={handleToggleSingletrack}
             mapRef={mapRef}
-            campActive={campActive}
+            externalCampActive={campActive}
             onCampChange={setCampActive}
           />
           <TrailMap activeFilters={activeFilters} singletrackOnly={singletrackOnly} onMapReady={handleMapReady} />
