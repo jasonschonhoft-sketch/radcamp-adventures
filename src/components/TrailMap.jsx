@@ -257,11 +257,9 @@ export default function TrailMap({ activeFilters, singletrackOnly, onMapReady })
         gestureHandling="greedy"
         mapTypeId="hybrid"
         mapTypeControl={true}
-        mapTypeControlOptions={{ position: 6 }}
         fullscreenControl={false}
         streetViewControl={false}
         zoomControl={true}
-        zoomControlOptions={{ position: 9 }}
       >
         {onMapReady && <MapController onMapReady={onMapReady} />}
         <TrailLayer activeFilters={activeFilters} singletrackOnly={singletrackOnly} onStatusChange={setStatus} />
