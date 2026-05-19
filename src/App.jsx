@@ -150,9 +150,7 @@ export default function App() {
             <span className="brand-name">RadCamp Adventures</span>
           </div>
           <SearchBar onPlaceSelect={handlePlaceSelect} />
-          <div className="header-right">
-            <span className="header-tagline">Colorado Trail Explorer</span>
-
+          <span className="header-tagline">Colorado Trail Explorer</span>
         </header>
 
         <main className="app-main">
