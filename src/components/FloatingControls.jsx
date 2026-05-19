@@ -24,7 +24,7 @@ const SECTION_LABELS = {
 
 const SHOP_QUERIES = ['bicycle shop', 'motorcycle shop', 'snowmobile dealer'];
 
-function SidebarContent({ activeFilters, onToggle, singletrackOnly, onToggleSingletrack, onClose, showClose }) {
+function SidebarContent({ activeFilters, onToggle, singletrackOnly, onToggleSingletrack, onClose, showClose, campActive, onToggleCamp, campLoading }) {
   const allOn = DISPLAY_KEYS.every(k => activeFilters[k]);
 
   function toggleAll() {
@@ -86,6 +86,20 @@ function SidebarContent({ activeFilters, onToggle, singletrackOnly, onToggleSing
             </div>
           );
         })}
+      <div className="fc-section">CAMPGROUNDS</div>
+        <button
+          className={`fc-item${campActive ? ' active' : ''}`}
+          style={{ '--dot': '#22c55e' }}
+          onClick={onToggleCamp}
+        >
+          <span className="fc-dot" />
+          <span className="fc-label">{campLoading ? 'Loading...' : 'Show Campgrounds'}</span>
+          {campActive && (
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" className="fc-check">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          )}
+        </button>
       </div>
     </>
   );
@@ -243,6 +257,9 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
           onToggleSingletrack={onToggleSingletrack}
           onClose={() => {}}
           showClose={false}
+          campActive={campActive}
+          onToggleCamp={handleCamp}
+          campLoading={campLoading}
         />
       </aside>
 
@@ -267,22 +284,6 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
               <path d="M3 9h18v3a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0V9z"/>
               <path d="M5 12v8h14v-8"/>
               <path d="M10 20v-5h4v5"/>
-            </svg>
-          )}
-        </button>
-
-        {/* Campgrounds button */}
-        <button
-          className={`fc-btn${campActive ? ' fc-btn-on' : ''}${campLoading ? ' fc-btn-spin' : ''}`}
-          onClick={handleCamp}
-          aria-label="Campgrounds"
-          title="Find campgrounds & camping spots"
-        >
-          {campLoading ? <span className="fc-spinner" /> : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 3L2 20h20L12 3z"/>
-              <path d="M12 3l4 8H8l4-8z" fill="currentColor" stroke="none" opacity="0.3"/>
-              <path d="M9 20v-4a3 3 0 0 1 6 0v4"/>
             </svg>
           )}
         </button>
@@ -332,6 +333,9 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
               onToggleSingletrack={onToggleSingletrack}
               onClose={() => setMobileOpen(false)}
               showClose={true}
+              campActive={campActive}
+              onToggleCamp={handleCamp}
+              campLoading={campLoading}
             />
           </div>
         </div>,
