@@ -26,7 +26,7 @@ function resolveStartActivity() {
   const params = new URLSearchParams(window.location.search);
   const param = params.get('activity');
   if (param && URL_PARAM_MAP[param]) return URL_PARAM_MAP[param];
-  return localStorage.getItem('radcamp_activity') || null;
+  return null;
 }
 
 function makeFilters(activity) {
