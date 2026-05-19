@@ -93,7 +93,7 @@ function SidebarContent({ activeFilters, onToggle, singletrackOnly, onToggleSing
           onClick={onToggleCamp}
         >
           <span className="fc-dot" />
-          <span className="fc-label">{campLoading ? 'Loading...' : 'Show Campgrounds'}</span>
+          <span className="fc-label">Campgrounds</span>
           {campActive && (
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" className="fc-check">
               <polyline points="20 6 9 17 4 12"/>

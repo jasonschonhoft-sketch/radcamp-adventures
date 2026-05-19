@@ -52,7 +52,7 @@ const MODAL_ACTIVITIES = [
   { key: 'horse', desc: '' },
 ];
 
-function WelcomeModal({ onSelect }) {
+function WelcomeModal({ onSelect, onCamp }) {
   return (
     <div className="welcome-overlay">
       <div className="welcome-modal">
@@ -78,6 +78,9 @@ function WelcomeModal({ onSelect }) {
             );
           })}
         </div>
+        <button className="welcome-camp" onClick={() => { onSelect(null); onCamp && onCamp(true); }}>
+          ⛺ Also show campgrounds
+        </button>
         <button className="welcome-skip" onClick={() => onSelect(null)}>
           Show all trails
         </button>
@@ -90,6 +93,7 @@ export default function App() {
   const [activeFilters, setActiveFilters] = useState(() => makeFilters(startActivity));
   const [modalVisible, setModalVisible] = useState(showModal);
   const [singletrackOnly, setSingletrackOnly] = useState(false);
+  const [campActive, setCampActive] = useState(false);
   const mapRef = useRef(null);
 
   const toggleFilter = useCallback((activity) => {
@@ -143,7 +147,7 @@ export default function App() {
 
   return (
     <APIProvider apiKey={apiKey}>
-      {modalVisible && <WelcomeModal onSelect={handleModalSelect} />}
+      {modalVisible && <WelcomeModal onSelect={handleModalSelect} onCamp={setCampActive} />}
       <div className="app">
         <header className="app-header">
           <div className="header-brand">
@@ -161,6 +165,8 @@ export default function App() {
             singletrackOnly={singletrackOnly}
             onToggleSingletrack={handleToggleSingletrack}
             mapRef={mapRef}
+            campActive={campActive}
+            onCampChange={setCampActive}
           />
           <TrailMap activeFilters={activeFilters} singletrackOnly={singletrackOnly} onMapReady={handleMapReady} />
           <WeatherWidget mapRef={mapRef} />
