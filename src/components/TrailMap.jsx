@@ -13,9 +13,14 @@ function getSurfaceLabel(surface) {
   return SURFACE_LABELS[surface.toLowerCase().trim()] ?? surface;
 }
 
-function MapController({ onMapReady }) {
+function MapController({ onMapReady, onMapInit }) {
   const map = useMap();
-  useEffect(() => { if (map) onMapReady(map); }, [map, onMapReady]);
+  useEffect(() => {
+    if (map) {
+      onMapReady(map);
+      if (onMapInit) onMapInit(map);
+    }
+  }, [map, onMapReady, onMapInit]);
   return null;
 }
 
@@ -255,6 +260,13 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange }) {
 
 export default function TrailMap({ activeFilters, singletrackOnly, onMapReady }) {
   const [status, setStatus] = useState({ type: 'idle' });
+  const [mapType, setMapType] = useState('hybrid');
+  const mapObjRef = useRef(null);
+
+  function handleMapTypeToggle(type) {
+    setMapType(type);
+    if (mapObjRef.current) mapObjRef.current.setMapTypeId(type);
+  }
 
   return (
     <div className="map-wrapper">
@@ -262,16 +274,20 @@ export default function TrailMap({ activeFilters, singletrackOnly, onMapReady })
         defaultCenter={COLORADO_CENTER}
         defaultZoom={10}
         gestureHandling="greedy"
-        mapTypeId="hybrid"
-        mapTypeControl={true}
-        mapTypeControlOptions={{ position: 2 }}
+        mapTypeId={mapType}
+        mapTypeControl={false}
         fullscreenControl={false}
         streetViewControl={false}
         zoomControl={true}
       >
-        {onMapReady && <MapController onMapReady={onMapReady} />}
+        {onMapReady && <MapController onMapReady={onMapReady} onMapInit={m => mapObjRef.current = m} />}
         <TrailLayer activeFilters={activeFilters} singletrackOnly={singletrackOnly} onStatusChange={setStatus} />
       </Map>
+
+      <div className="map-type-toggle">
+        <button className={`map-type-btn${mapType === 'roadmap' ? ' active' : ''}`} onClick={() => handleMapTypeToggle('roadmap')}>Map</button>
+        <button className={`map-type-btn${mapType === 'hybrid' ? ' active' : ''}`} onClick={() => handleMapTypeToggle('hybrid')}>Sat</button>
+      </div>
 
       <div className="map-status">
         {status.type === 'loading' && (
