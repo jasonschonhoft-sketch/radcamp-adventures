@@ -264,7 +264,7 @@ export default function TrailMap({ activeFilters, singletrackOnly, onMapReady })
         gestureHandling="greedy"
         mapTypeId="hybrid"
         mapTypeControl={true}
-        mapTypeControlOptions={{ position: 9 }}
+        mapTypeControlOptions={{ position: 2 }}
         fullscreenControl={false}
         streetViewControl={false}
         zoomControl={true}
