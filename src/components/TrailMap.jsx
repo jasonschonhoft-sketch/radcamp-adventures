@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { Map, useMap } from '@vis.gl/react-google-maps';
 import { ACTIVITY_CONFIG, ACTIVITY_KEYS, COTREX_URL, PAVED_SURFACES } from '../config';
 
+const MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
 const SURFACE_LABELS = {
   paved: 'Paved', concrete: 'Paved', boardwalk: 'Paved',
   dirt: 'Dirt', gravel: 'Gravel', unpaved: 'Unpaved',
@@ -151,8 +153,7 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange }) {
               }).join('');
               const lat = e.latLng.lat();
               const lng = e.latLng.lng();
-              const apiKey = '${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}';
-              const thumbUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=14&size=240x120&maptype=hybrid&key=${apiKey}`;
+              const thumbUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=14&size=240x120&maptype=hybrid&key=${MAPS_API_KEY}`;
               new google.maps.InfoWindow({
                 content: `<div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;min-width:240px;max-width:240px;overflow:hidden;border-radius:10px">
                   <img src="${thumbUrl}" style="width:100%;height:120px;object-fit:cover;display:block;border-radius:10px 10px 0 0" />
