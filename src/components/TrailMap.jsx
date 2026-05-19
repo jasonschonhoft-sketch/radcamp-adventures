@@ -284,7 +284,7 @@ export default function TrailMap({ activeFilters, singletrackOnly, onMapReady })
         <TrailLayer activeFilters={activeFilters} singletrackOnly={singletrackOnly} onStatusChange={setStatus} />
       </Map>
 
-      <div className="map-type-toggle">
+      <div className="map-type-toggle" style={{position:"absolute",top:"12px",right:"12px",zIndex:40}}>
         <button className={`map-type-btn${mapType === 'roadmap' ? ' active' : ''}`} onClick={() => handleMapTypeToggle('roadmap')}>Map</button>
         <button className={`map-type-btn${mapType === 'hybrid' ? ' active' : ''}`} onClick={() => handleMapTypeToggle('hybrid')}>Sat</button>
       </div>

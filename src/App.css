@@ -139,7 +139,7 @@ html, body, #root {
 .floating-controls {
   position: absolute;
   top: 16px;
-  left: 236px;
+  left: 260px;
   z-index: 50;
   display: flex;
   flex-direction: column;
@@ -320,8 +320,8 @@ html, body, #root {
 /* ── Weather widget ──────────────────────────────────────────── */
 .weather-widget {
   position: absolute;
-  top: 12px;
-  right: 60px;
+  top: 52px;
+  right: 12px;
   z-index: 40;
   background: rgba(10,11,15,0.92);
   border: 1px solid rgba(255,255,255,0.08);
@@ -537,9 +537,6 @@ html, body, #root {
 
 /* Custom map type toggle */
 .map-type-toggle {
-  position: absolute;
-  top: 12px;
-  right: 12px;
   z-index: 40;
   display: flex;
   border-radius: 8px;
