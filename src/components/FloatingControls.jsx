@@ -155,6 +155,7 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
 
     queries.forEach(query => {
       service.textSearch({ location: center, radius: 80467, query }, (results, status) => {
+        console.log('Camp search:', query, status, results?.length);
         if (status === placesLib.PlacesServiceStatus.OK && results) all.push(...results.slice(0, 8));
         if (--pending === 0) {
           setCampLoading(false);
@@ -279,8 +280,9 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
         >
           {campLoading ? <span className="fc-spinner" /> : (
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 17l4-8 4 5 3-3 4 6"/>
-              <path d="M3 20h18"/>
+              <path d="M12 3L2 20h20L12 3z"/>
+              <path d="M12 3l4 8H8l4-8z" fill="currentColor" stroke="none" opacity="0.3"/>
+              <path d="M9 20v-4a3 3 0 0 1 6 0v4"/>
             </svg>
           )}
         </button>
