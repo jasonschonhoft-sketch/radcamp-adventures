@@ -591,3 +591,36 @@ html, body, #root {
   margin-bottom: 8px;
 }
 .welcome-camp:hover { background: rgba(34,197,94,0.15); }
+
+.welcome-card.selected {
+  background: rgba(255,255,255,0.1);
+  border-color: var(--card-color);
+  box-shadow: 0 0 0 2px var(--card-color);
+}
+.welcome-go {
+  display: block;
+  width: 100%;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  padding: 14px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  font-family: inherit;
+  margin-top: 8px;
+}
+.welcome-go:hover { background: #d4711e; transform: translateY(-1px); }
+.welcome-camp-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #22c55e;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 10px 4px;
+  margin-top: 8px;
+}
+.welcome-camp-check input { accent-color: #22c55e; width: 16px; height: 16px; cursor: pointer; }

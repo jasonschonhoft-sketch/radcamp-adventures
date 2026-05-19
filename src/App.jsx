@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { APIProvider } from '@vis.gl/react-google-maps';
 import TrailMap from './components/TrailMap';
 import FloatingControls from './components/FloatingControls';
@@ -53,24 +53,43 @@ const MODAL_ACTIVITIES = [
 ];
 
 function WelcomeModal({ onSelect, onCamp }) {
+  const [selected, setSelected] = React.useState([]);
+  const [withCamp, setWithCamp] = React.useState(false);
+
+  function toggleActivity(key) {
+    setSelected(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+  }
+
+  function handleGo() {
+    if (selected.length === 0) {
+      onSelect(null);
+    } else if (selected.length === 1) {
+      onSelect(selected[0]);
+    } else {
+      onSelect(null, selected);
+    }
+    if (withCamp && onCamp) onCamp(true);
+  }
+
   return (
     <div className="welcome-overlay">
       <div className="welcome-modal">
         <div className="welcome-header">
           <img src="/logo.svg" alt="RadCamp" className="welcome-logo" />
           <h2 className="welcome-title">What are you looking for?</h2>
-          <p className="welcome-sub">Select an activity — find your next Colorado adventure!</p>
+          <p className="welcome-sub">Select one or more — find your next Colorado adventure!</p>
         </div>
         <div className="welcome-grid">
-          {MODAL_ACTIVITIES.map(({ key, desc }) => {
+          {MODAL_ACTIVITIES.map(({ key }) => {
             const cfg = ACTIVITY_CONFIG[key];
             if (!cfg) return null;
+            const active = selected.includes(key);
             return (
               <button
                 key={key}
-                className="welcome-card"
+                className={`welcome-card${active ? ' selected' : ''}`}
                 style={{ '--card-color': cfg.color }}
-                onClick={() => onSelect(key)}
+                onClick={() => toggleActivity(key)}
               >
                 <div className="welcome-card-dot" />
                 <span className="welcome-card-label">{cfg.label}</span>
@@ -78,11 +97,12 @@ function WelcomeModal({ onSelect, onCamp }) {
             );
           })}
         </div>
-        <button className="welcome-skip" onClick={() => onSelect(null)}>
-          Show all trails
-        </button>
-        <button className="welcome-camp" onClick={() => { onSelect(null); onCamp && onCamp(true); }}>
+        <label className="welcome-camp-check">
+          <input type="checkbox" checked={withCamp} onChange={e => setWithCamp(e.target.checked)} />
           Also show campgrounds
+        </label>
+        <button className="welcome-go" onClick={handleGo}>
+          {selected.length === 0 ? "Show all trails" : `Show ${selected.length === 1 ? ACTIVITY_CONFIG[selected[0]]?.label : selected.length + " trail types"}`} →
         </button>
       </div>
     </div>
@@ -100,9 +120,13 @@ export default function App() {
     setActiveFilters(prev => ({ ...prev, [activity]: !prev[activity] }));
   }, []);
 
-  function handleModalSelect(activity) {
-    localStorage.setItem('radcamp_activity', activity ?? 'all');
-    setActiveFilters(makeFilters(activity));
+  function handleModalSelect(activity, multiKeys) {
+    if (multiKeys && Array.isArray(multiKeys)) {
+      const filters = Object.fromEntries(ACTIVITY_KEYS.map(k => [k, multiKeys.includes(k)]));
+      setActiveFilters(filters);
+    } else {
+      setActiveFilters(makeFilters(activity));
+    }
     setModalVisible(false);
   }
 
