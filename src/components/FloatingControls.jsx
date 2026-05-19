@@ -130,7 +130,7 @@ function SidebarContent({
   );
 }
 
-export default function FloatingControls({ activeFilters, onToggle, singletrackOnly, onToggleSingletrack, mapRef, externalCampActive, onCampChange, onRouteModeChange }) {
+export default function FloatingControls({ activeFilters, onToggle, singletrackOnly, onToggleSingletrack, mapRef, externalCampActive, onCampChange, onRouteModeChange, onAddToRoute }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [locating, setLocating] = useState(false);
   const [shopsActive, setShopsActive] = useState(false);
@@ -270,6 +270,17 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
       });
     });
   }
+
+  function handleAddToRoute(trail) {
+    setRouteTrails(prev => {
+      if (prev.find(t => t.name === trail.name)) return prev;
+      return [...prev, trail];
+    });
+  }
+
+  useEffect(() => {
+    if (onAddToRoute) onAddToRoute(handleAddToRoute);
+  }, []);
 
   function handleRemoveTrail(i) { setRouteTrails(prev => prev.filter((_, idx) => idx !== i)); }
   function handleClearRoute() { setRouteTrails([]); }
