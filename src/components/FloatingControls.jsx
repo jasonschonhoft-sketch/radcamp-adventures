@@ -300,7 +300,7 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
     activeFilters, onToggle, singletrackOnly, onToggleSingletrack,
     campActive, onToggleCamp: handleCamp, campLoading,
     shopsActive, onToggleShops: handleShops,
-    routeMode, onToggleRoute: () => setRouteMode(o => !o),
+    routeMode, onToggleRoute: () => { const next = !routeMode; setRouteMode(next); if (onRouteModeChange) onRouteModeChange(next); },
     routeTrails, onClearRoute: handleClearRoute,
     onRemoveTrail: handleRemoveTrail,
     onOpenInMaps: handleOpenInMaps,
