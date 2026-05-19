@@ -492,3 +492,44 @@ html, body, #root {
   line-height: 1;
   pointer-events: none;
 }
+
+/* Filter button active badge (mobile) */
+.fc-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* DEBUG — remove after fix */
+.fc-mobile-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+  background: rgba(0,0,0,0.7) !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+.fc-sidebar-mobile {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 80vw !important;
+  max-width: 320px !important;
+  height: 100% !important;
+  height: 100dvh !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  background: #0f1117 !important;
+  z-index: 10000 !important;
+}
