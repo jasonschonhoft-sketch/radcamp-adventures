@@ -226,6 +226,19 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode,
             polyline.__color = style.color;
 
             polyline.addListener('click', e => {
+              // Route planning mode
+              if (routeModeRef.current) {
+                const trail = {
+                  name: properties.name?.trim() || 'Unnamed Trail',
+                  miles: properties.length_mi_ || 0,
+                  lat: e.latLng.lat(),
+                  lng: e.latLng.lng(),
+                };
+                if (onAddToRoute) onAddToRoute(trail);
+                polyline.setOptions({ strokeColor: '#ffffff', strokeWeight: (style.weight || 2) + 3, strokeOpacity: 1 });
+                routePolylinesRef.current.push({ polyline, origColor: style.color, origWeight: style.weight, origOpacity: style.opacity || 0.85 });
+                return;
+              }
               // Close previous
               if (activeInfoWindowRef.current) activeInfoWindowRef.current.close();
               activePolylinesRef.current.forEach(p => {
