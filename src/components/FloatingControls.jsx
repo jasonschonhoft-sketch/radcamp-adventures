@@ -13,7 +13,7 @@ const SECTION_LABELS = {};
 
 const SHOP_QUERIES = ['bicycle shop', 'motorcycle shop', 'snowmobile dealer'];
 
-function SidebarContent({ activeFilters, onToggle, singletrackOnly, onToggleSingletrack, onClose, showClose, campActive, onToggleCamp, campLoading, routeMode, routeTrails, onClearRoute, onRemoveTrail, onOpenInMaps, onShareRoute }) {
+function SidebarContent({ activeFilters, onToggle, singletrackOnly, onToggleSingletrack, onClose, showClose, campActive, onToggleCamp, campLoading, shopsActive, onToggleShops, routeMode, routeTrails, onClearRoute, onRemoveTrail, onOpenInMaps, onShareRoute }) {
   const allOn = DISPLAY_KEYS.every(k => activeFilters[k]);
 
   function toggleAll() {
@@ -104,6 +104,25 @@ function SidebarContent({ activeFilters, onToggle, singletrackOnly, onToggleSing
           )}
         </div>
       )}
+      <div className="fc-section">NEARBY</div>
+        <button
+          className={`fc-item${campActive ? ' active' : ''}`}
+          style={{ '--dot': '#22c55e' }}
+          onClick={onToggleCamp}
+        >
+          <span className="fc-dot" />
+          <span className="fc-label">{campLoading ? 'Loading...' : 'Campgrounds'}</span>
+          {campActive && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" className="fc-check"><polyline points="20 6 9 17 4 12"/></svg>}
+        </button>
+        <button
+          className={`fc-item${shopsActive ? ' active' : ''}`}
+          style={{ '--dot': '#e67e22' }}
+          onClick={onToggleShops}
+        >
+          <span className="fc-dot" />
+          <span className="fc-label">Nearby Shops</span>
+          {shopsActive && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" className="fc-check"><polyline points="20 6 9 17 4 12"/></svg>}
+        </button>
       <div className="fc-section">CAMPGROUNDS</div>
         <button
           className={`fc-item${campActive ? ' active' : ''}`}
@@ -329,6 +348,8 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
           campActive={campActive}
           onToggleCamp={handleCamp}
           campLoading={campLoading}
+          shopsActive={shopsActive}
+          onToggleShops={handleShops}
           routeMode={routeMode}
           routeTrails={routeTrails}
           onClearRoute={handleClearRoute}
@@ -423,6 +444,8 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
               campActive={campActive}
               onToggleCamp={handleCamp}
               campLoading={campLoading}
+              shopsActive={shopsActive}
+              onToggleShops={handleShops}
               routeMode={routeMode}
               routeTrails={routeTrails}
               onClearRoute={handleClearRoute}
