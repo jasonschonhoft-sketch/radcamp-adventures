@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Map, useMap } from '@vis.gl/react-google-maps';
-import { ACTIVITY_CONFIG, ACTIVITY_KEYS, COTREX_URL, PAVED_SURFACES, GRAVEL_SURFACES } from '../config';
+import { ACTIVITY_CONFIG, ACTIVITY_KEYS, COTREX_URL, PAVED_SURFACES } from '../config';
 import { renderIconHtml } from '../icons';
 
 const COLORADO_CENTER = { lat: 39.0, lng: -105.5 };
@@ -11,17 +11,24 @@ function getTrailActivities(props) {
   const acts = [];
   const surface = (props.surface || '').toLowerCase();
   const isPaved = PAVED_SURFACES.has(surface);
-  const isGravel = GRAVEL_SURFACES.has(surface);
+  const isTrail = props.type === 'Trail';
+  const isRoad = props.type === 'Road';
+  const isHighwayVehicle = props.highway_ve === 'yes';
 
   if (props.hiking === 'yes') acts.push('hiking');
 
   if (props.bike === 'yes') {
     acts.push('ebike');
-    if (isPaved) {
+    if (isTrail) {
+      acts.push('mountain_bike');
+    } else if (isRoad && isPaved) {
       acts.push('bike_path');
       acts.push('road_bike');
-    } else if (isGravel) {
+    } else if (isRoad && !isHighwayVehicle) {
       acts.push('gravel_bike');
+    } else if (isPaved) {
+      acts.push('bike_path');
+      acts.push('road_bike');
     } else {
       acts.push('mountain_bike');
     }
@@ -36,6 +43,10 @@ function getTrailActivities(props) {
   if (props.snowmobile === 'yes') acts.push('snowmobile');
 
   return acts;
+}
+
+function isSingletrack(props) {
+  return props.type === 'Trail' && (props.surface || '').toLowerCase() === 'dirt';
 }
 
 async function fetchTrailsInBounds(bounds) {
@@ -54,7 +65,7 @@ async function fetchTrailsInBounds(bounds) {
     spatialRel: 'esriSpatialRelIntersects',
     inSR: '4326',
     outSR: '4326',
-    outFields: 'name,hiking,bike,motorcycle,atv,ohv_gt_50,snowmobile,surface',
+    outFields: 'name,hiking,bike,motorcycle,atv,ohv_gt_50,snowmobile,surface,type,highway_ve',
     f: 'geojson',
     resultRecordCount: MAX_RECORDS,
   });
@@ -136,6 +147,13 @@ function TrailLayer({ activeFilters, onStatusChange }) {
             ? geometry.coordinates
             : [geometry.coordinates];
 
+        const singletrack = isSingletrack(properties);
+        const dashedIcon = singletrack ? [{
+          icon: { path: 'M 0,-1 0,1', strokeOpacity: 0.9, scale: 3 },
+          offset: '0',
+          repeat: '12px',
+        }] : undefined;
+
         activities.forEach(activity => {
           const cfg = ACTIVITY_CONFIG[activity];
           if (!cfg) return;
@@ -145,8 +163,9 @@ function TrailLayer({ activeFilters, onStatusChange }) {
             const polyline = new google.maps.Polyline({
               path: coords.map(([lng, lat]) => ({ lat, lng })),
               strokeColor: cfg.color,
-              strokeOpacity: 0.9,
+              strokeOpacity: singletrack ? 0 : 0.9,
               strokeWeight: cfg.weight,
+              icons: dashedIcon,
               map: visible ? map : null,
               clickable: true,
             });
