@@ -294,7 +294,7 @@ export default function ActivityFilter({ activeFilters, onToggle }) {
                 title={config.note || config.label}
               >
                 <span className="filter-dot" />
-                <span className="filter-icon">{ICONS[key]}</span>
+                
                 <span className="filter-label">
                   {config.label}
                   {config.note && <span className="filter-note"> *</span>}
