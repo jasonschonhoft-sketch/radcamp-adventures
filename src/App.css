@@ -624,3 +624,8 @@ html, body, #root {
   margin-top: 8px;
 }
 .welcome-camp-check input { accent-color: #22c55e; width: 16px; height: 16px; cursor: pointer; }
+
+/* Remove Google InfoWindow top padding */
+.gm-style .gm-style-iw-c { padding-top: 0 !important; }
+.gm-style .gm-style-iw-d { padding-top: 0 !important; overflow: hidden !important; }
+.gm-style .gm-style-iw-d > div { padding-top: 0 !important; }
