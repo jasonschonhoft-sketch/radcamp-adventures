@@ -147,7 +147,7 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange }) {
               const surfaceLabel = getSurfaceLabel(properties.surface);
               const actRows = acts.map(a => {
                 const c = ACTIVITY_CONFIG[a];
-                return `<div style="display:flex;align-items:center;gap:8px;padding:2px 0"><div style="width:6px;height:6px;border-radius:50%;background:${c.color};flex-shrink:0"></div><span style="font-size:12px;color:#8a9bb0;font-weight:500">${c.label}</span></div>`;
+                return `<div style="display:flex;align-items:center;gap:8px;padding:1px 0"><div style="width:6px;height:6px;border-radius:50%;background:${c.color};flex-shrink:0"></div><span style="font-size:12px;color:#8a9bb0;font-weight:500">${c.label}</span></div>`;
               }).join('');
               new google.maps.InfoWindow({
                 content: `<div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;padding:12px 14px;min-width:180px;max-width:240px"><div style="font-size:13px;font-weight:700;color:#e8edf5;margin-bottom:8px;line-height:1.3">${properties.name || 'Unnamed Trail'}</div><div>${actRows}</div>${surfaceLabel ? `<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.07);font-size:11px;color:rgba(255,255,255,0.35)">${surfaceLabel}</div>` : ''}</div>`,
