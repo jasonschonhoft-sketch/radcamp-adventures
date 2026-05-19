@@ -115,6 +115,14 @@ export default function App() {
   const [singletrackOnly, setSingletrackOnly] = useState(false);
   const [campActive, setCampActive] = useState(false);
   const [routeMode, setRouteMode] = useState(false);
+  const [routeTrails, setRouteTrails] = useState([]);
+
+  const handleAddToRoute = useCallback((trail) => {
+    setRouteTrails(prev => {
+      if (prev.find(t => t.name === trail.name && t.miles === trail.miles)) return prev;
+      return [...prev, trail];
+    });
+  }, []);
   const mapRef = useRef(null);
   const addToRouteRef = useRef(null);
 
@@ -194,9 +202,10 @@ export default function App() {
             externalCampActive={campActive}
             onCampChange={setCampActive}
             onRouteModeChange={setRouteMode}
-            onAddToRoute={fn => { addToRouteRef.current = fn; }}
+            routeTrails={routeTrails}
+            onRouteTrailsChange={setRouteTrails}
           />
-          <TrailMap activeFilters={activeFilters} singletrackOnly={singletrackOnly} onMapReady={handleMapReady} routeMode={routeMode} addToRouteRef={addToRouteRef} />
+          <TrailMap activeFilters={activeFilters} singletrackOnly={singletrackOnly} onMapReady={handleMapReady} routeMode={routeMode} onAddToRoute={handleAddToRoute} />
           <WeatherWidget mapRef={mapRef} />
         </main>
       </div>

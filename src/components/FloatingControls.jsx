@@ -130,7 +130,7 @@ function SidebarContent({
   );
 }
 
-export default function FloatingControls({ activeFilters, onToggle, singletrackOnly, onToggleSingletrack, mapRef, externalCampActive, onCampChange, onRouteModeChange, onAddToRoute }) {
+export default function FloatingControls({ activeFilters, onToggle, singletrackOnly, onToggleSingletrack, mapRef, externalCampActive, onCampChange, onRouteModeChange, routeTrails: externalRouteTrails, onRouteTrailsChange }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [locating, setLocating] = useState(false);
   const [shopsActive, setShopsActive] = useState(false);
@@ -140,7 +140,13 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
   const [campLoading, setCampLoading] = useState(false);
   const campMarkersRef = useRef([]);
   const [routeMode, setRouteMode] = useState(false);
-  const [routeTrails, setRouteTrails] = useState([]);
+  const [routeTrailsInternal, setRouteTrailsInternal] = useState([]);
+  const routeTrails = externalRouteTrails ?? routeTrailsInternal;
+  function setRouteTrails(fn) {
+    const next = typeof fn === "function" ? fn(routeTrails) : fn;
+    setRouteTrailsInternal(next);
+    if (onRouteTrailsChange) onRouteTrailsChange(next);
+  }
   const placesLib = useMapsLibrary('places');
 
   const anyOn = DISPLAY_KEYS.some(k => activeFilters[k]);
@@ -270,17 +276,6 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
       });
     });
   }
-
-  function handleAddToRoute(trail) {
-    setRouteTrails(prev => {
-      if (prev.find(t => t.name === trail.name)) return prev;
-      return [...prev, trail];
-    });
-  }
-
-  useEffect(() => {
-    if (onAddToRoute) onAddToRoute(handleAddToRoute);
-  }, []);
 
   function handleRemoveTrail(i) { setRouteTrails(prev => prev.filter((_, idx) => idx !== i)); }
   function handleClearRoute() { setRouteTrails([]); }

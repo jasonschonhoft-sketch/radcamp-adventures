@@ -107,7 +107,7 @@ async function fetchTrailsInBounds(bounds) {
   return { features: data.features || [], exceeded: data.properties?.exceededTransferLimit === true };
 }
 
-function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode, addToRouteRef }) {
+function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode, onAddToRoute }) {
   const map = useMap();
   const polylinesRef = useRef({});
   const activeFiltersRef = useRef(activeFilters);
@@ -339,7 +339,7 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode,
   return null;
 }
 
-export default function TrailMap({ activeFilters, singletrackOnly, onMapReady, routeMode, addToRouteRef }) {
+export default function TrailMap({ activeFilters, singletrackOnly, onMapReady, routeMode, onAddToRoute }) {
   const [status, setStatus] = useState({ type: 'idle' });
   return (
     <div className="map-wrapper">
@@ -355,7 +355,7 @@ export default function TrailMap({ activeFilters, singletrackOnly, onMapReady, r
         zoomControl={true}
       >
         {onMapReady && <MapController onMapReady={onMapReady} />}
-        <TrailLayer activeFilters={activeFilters} singletrackOnly={singletrackOnly} onStatusChange={setStatus} routeMode={routeMode} addToRouteRef={addToRouteRef} />
+        <TrailLayer activeFilters={activeFilters} singletrackOnly={singletrackOnly} onStatusChange={setStatus} routeMode={routeMode} onAddToRoute={onAddToRoute} />
       </Map>
       <div className="map-status">
         {status.type === 'loading' && <div className="status-badge loading"><span className="spinner" /> Loading trails...</div>}
