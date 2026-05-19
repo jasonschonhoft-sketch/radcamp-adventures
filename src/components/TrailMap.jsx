@@ -149,8 +149,19 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange }) {
                 const c = ACTIVITY_CONFIG[a];
                 return `<div style="display:flex;align-items:center;gap:8px;padding:1px 0"><div style="width:6px;height:6px;border-radius:50%;background:${c.color};flex-shrink:0"></div><span style="font-size:12px;color:#8a9bb0;font-weight:500">${c.label}</span></div>`;
               }).join('');
+              const lat = e.latLng.lat();
+              const lng = e.latLng.lng();
+              const apiKey = '${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}';
+              const thumbUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=14&size=240x120&maptype=hybrid&key=${apiKey}`;
               new google.maps.InfoWindow({
-                content: `<div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;padding:12px 14px;min-width:180px;max-width:240px"><div style="font-size:13px;font-weight:700;color:#e8edf5;margin-bottom:8px;line-height:1.3">${properties.name || 'Unnamed Trail'}</div><div>${actRows}</div>${surfaceLabel ? `<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.07);font-size:11px;color:rgba(255,255,255,0.35)">${surfaceLabel}</div>` : ''}</div>`,
+                content: `<div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;min-width:240px;max-width:240px;overflow:hidden;border-radius:10px">
+                  <img src="${thumbUrl}" style="width:100%;height:120px;object-fit:cover;display:block;border-radius:10px 10px 0 0" />
+                  <div style="padding:10px 12px">
+                    <div style="font-size:13px;font-weight:700;color:#e8edf5;margin-bottom:6px;line-height:1.3">${properties.name || 'Unnamed Trail'}</div>
+                    <div>${actRows}</div>
+                    ${surfaceLabel ? `<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.07);font-size:11px;color:rgba(255,255,255,0.35)">${surfaceLabel}</div>` : ''}
+                  </div>
+                </div>`,
                 position: e.latLng,
               }).open(map);
             });
