@@ -58,8 +58,8 @@ function WelcomeModal({ onSelect }) {
       <div className="welcome-modal">
         <div className="welcome-header">
           <img src="/logo.svg" alt="RadCamp" className="welcome-logo" />
-          <h2 className="welcome-title">Where are you riding?</h2>
-          <p className="welcome-sub">Pick your adventure — Colorado trails await</p>
+          <h2 className="welcome-title">What are you looking for?</h2>
+          <p className="welcome-sub">Select an activity to show matching Colorado trails</p>
         </div>
         <div className="welcome-grid">
           {MODAL_ACTIVITIES.map(({ key, desc }) => {
