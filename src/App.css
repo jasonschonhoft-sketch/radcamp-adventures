@@ -675,3 +675,9 @@ html, body, #root {
 .fc-route-btn-share:hover { background: rgba(230,126,34,0.1); }
 .fc-route-clear { display: block; width: calc(100% - 28px); margin: 0 14px 4px; background: none; border: none; color: rgba(255,255,255,0.2); font-size: 11px; cursor: pointer; text-align: left; padding: 2px 0; font-family: inherit; }
 .fc-route-clear:hover { color: #ef4444; }
+
+@media (max-width: 640px) {
+  .fc-label { color: rgba(255,255,255,0.9) !important; font-size: 14px !important; }
+  .fc-item:not(.active) .fc-label { color: rgba(255,255,255,0.7) !important; }
+  .fc-section { color: rgba(255,255,255,0.4) !important; }
+}
