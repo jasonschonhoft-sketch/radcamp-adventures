@@ -337,7 +337,7 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
 
       {mobileOpen && createPortal(
         <div onClick={() => setMobileOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'stretch' }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: '80vw', maxWidth: '300px', height: '100%', background: '#0f1117', borderRight: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', overflowY: 'auto', zIndex: 100000 }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '72vw', maxWidth: '260px', height: '100%', background: '#0f1117', borderRight: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', overflowY: 'auto', zIndex: 100000 }}>
             <SidebarContent {...sidebarProps} onClose={() => setMobileOpen(false)} showClose={true} />
           </div>
         </div>,

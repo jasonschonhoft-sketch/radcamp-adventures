@@ -135,6 +135,16 @@ html, body, #root {
 .gm-style .gm-style-iw-chr button { opacity: 1 !important; width: 28px !important; height: 28px !important; }
 .gm-style .gm-style-iw-chr button span { background-color: #8a9bb0 !important; width: 12px !important; height: 12px !important; }
 
+/* ── Trail name labels (zoom > 12) ───────────────────────────── */
+.trail-label {
+  text-shadow:
+    0 0 3px rgba(0,0,0,0.95),
+    0 1px 2px rgba(0,0,0,0.9),
+    0 0 6px rgba(0,0,0,0.7);
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
 /* ── Floating controls ───────────────────────────────────────── */
 .floating-controls {
   position: absolute;
@@ -279,8 +289,8 @@ html, body, #root {
 }
 .fc-item:not(.active) .fc-dot { background: transparent; border: 1.5px solid rgba(255,255,255,0.2); }
 
-.fc-label { flex: 1; font-size: 13px; color: rgba(255,255,255,0.85); transition: color 0.12s; }
-.fc-item:not(.active) .fc-label { color: rgba(255,255,255,0.28); }
+.fc-label { flex: 1; font-size: 13px; color: rgba(255,255,255,0.95); transition: color 0.12s; }
+.fc-item:not(.active) .fc-label { color: rgba(255,255,255,0.55); }
 
 .fc-check { color: rgba(255,255,255,0.45); flex-shrink: 0; }
 
