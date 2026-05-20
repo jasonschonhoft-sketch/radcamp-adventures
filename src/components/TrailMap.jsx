@@ -107,7 +107,7 @@ async function fetchTrailsInBounds(bounds) {
   return { features: data.features || [], exceeded: data.properties?.exceededTransferLimit === true };
 }
 
-function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode, onAddToRoute }) {
+function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode, onAddToRoute, routeTrails }) {
   const map = useMap();
   const polylinesRef = useRef({});
   const activeFiltersRef = useRef(activeFilters);
@@ -117,7 +117,9 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode,
   const activePolylinesRef = useRef([]);
   const routeModeRef = useRef(routeMode);
   const routePolylinesRef = useRef([]);
+  const routeTrailsRef = useRef([]);
   useEffect(() => { routeModeRef.current = routeMode; }, [routeMode]);
+  routeTrailsRef.current = routeTrails || [];
   // Clear highlights when route mode turns off
   useEffect(() => {
     if (!routeMode) {
@@ -325,6 +327,17 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode,
           });
         });
       });
+      // Re-highlight route trails after map pan/zoom
+      const routeNames = new Set(routeTrailsRef.current.map(t => t.name));
+      if (routeNames.size > 0) {
+        ACTIVITY_KEYS.forEach(act => {
+          (polylinesRef.current[act] || []).forEach(p => {
+            if (routeNames.has(p.__properties?.name?.trim())) {
+              p.setOptions({ strokeColor: '#ffffff', strokeWeight: (p.__origWeight || 2) + 3, strokeOpacity: 1 });
+            }
+          });
+        });
+      }
       onStatusChange({ type: 'loaded', count: features.length, exceeded });
     } catch (err) {
       console.error('Trail load error:', err);
@@ -352,7 +365,7 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode,
   return null;
 }
 
-export default function TrailMap({ activeFilters, singletrackOnly, onMapReady, routeMode, onAddToRoute }) {
+export default function TrailMap({ activeFilters, singletrackOnly, onMapReady, routeMode, onAddToRoute, routeTrails }) {
   const [status, setStatus] = useState({ type: 'idle' });
   return (
     <div className="map-wrapper">
@@ -368,7 +381,7 @@ export default function TrailMap({ activeFilters, singletrackOnly, onMapReady, r
         zoomControl={true}
       >
         {onMapReady && <MapController onMapReady={onMapReady} />}
-        <TrailLayer activeFilters={activeFilters} singletrackOnly={singletrackOnly} onStatusChange={setStatus} routeMode={routeMode} onAddToRoute={onAddToRoute} />
+        <TrailLayer activeFilters={activeFilters} singletrackOnly={singletrackOnly} onStatusChange={setStatus} routeMode={routeMode} onAddToRoute={onAddToRoute} routeTrails={routeTrails} />
       </Map>
       <div className="map-status">
         {status.type === 'loading' && <div className="status-badge loading"><span className="spinner" /> Loading trails...</div>}
