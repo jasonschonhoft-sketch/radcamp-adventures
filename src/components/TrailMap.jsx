@@ -107,7 +107,7 @@ async function fetchTrailsInBounds(bounds) {
   return { features: data.features || [], exceeded: data.properties?.exceededTransferLimit === true };
 }
 
-function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode, onAddToRoute, routeTrails }) {
+function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode, onAddToRoute, onRemoveFromRoute, routeTrails }) {
   const map = useMap();
   const polylinesRef = useRef({});
   const activeFiltersRef = useRef(activeFilters);
@@ -230,15 +230,28 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode,
             polyline.addListener('click', e => {
               // Route planning mode
               if (routeModeRef.current) {
-                const trail = {
-                  name: properties.name?.trim() || 'Unnamed Trail',
-                  miles: properties.length_mi_ || 0,
-                  lat: e.latLng.lat(),
-                  lng: e.latLng.lng(),
-                };
-                if (onAddToRoute) onAddToRoute(trail);
-                polyline.setOptions({ strokeColor: '#ffffff', strokeWeight: (style.weight || 2) + 3, strokeOpacity: 1 });
-                routePolylinesRef.current.push({ polyline, origColor: style.color, origWeight: style.weight, origOpacity: style.opacity || 0.85 });
+                const trailName = properties.name?.trim() || 'Unnamed Trail';
+                const alreadyInRoute = routeTrailsRef.current.some(t => t.name === trailName);
+                if (alreadyInRoute) {
+                  // Remove from route - reset all polylines with this name
+                  ACTIVITY_KEYS.forEach(act => {
+                    (polylinesRef.current[act] || []).forEach(p => {
+                      if (p.__properties?.name?.trim() === trailName) {
+                        p.setOptions({ strokeColor: p.__color, strokeWeight: p.__origWeight, strokeOpacity: p.__origOpacity });
+                      }
+                    });
+                  });
+                  if (onRemoveFromRoute) onRemoveFromRoute(trailName);
+                } else {
+                  const trail = {
+                    name: trailName,
+                    miles: properties.length_mi_ || 0,
+                    lat: e.latLng.lat(),
+                    lng: e.latLng.lng(),
+                  };
+                  if (onAddToRoute) onAddToRoute(trail);
+                  polyline.setOptions({ strokeColor: '#ffffff', strokeWeight: (style.weight || 2) + 3, strokeOpacity: 1 });
+                }
                 return;
               }
               // Close previous
@@ -365,7 +378,7 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode,
   return null;
 }
 
-export default function TrailMap({ activeFilters, singletrackOnly, onMapReady, routeMode, onAddToRoute, routeTrails }) {
+export default function TrailMap({ activeFilters, singletrackOnly, onMapReady, routeMode, onAddToRoute, onRemoveFromRoute, routeTrails }) {
   const [status, setStatus] = useState({ type: 'idle' });
   return (
     <div className="map-wrapper">
@@ -381,7 +394,7 @@ export default function TrailMap({ activeFilters, singletrackOnly, onMapReady, r
         zoomControl={true}
       >
         {onMapReady && <MapController onMapReady={onMapReady} />}
-        <TrailLayer activeFilters={activeFilters} singletrackOnly={singletrackOnly} onStatusChange={setStatus} routeMode={routeMode} onAddToRoute={onAddToRoute} routeTrails={routeTrails} />
+        <TrailLayer activeFilters={activeFilters} singletrackOnly={singletrackOnly} onStatusChange={setStatus} routeMode={routeMode} onAddToRoute={onAddToRoute} onRemoveFromRoute={onRemoveFromRoute} routeTrails={routeTrails} />
       </Map>
       <div className="map-status">
         {status.type === 'loading' && <div className="status-badge loading"><span className="spinner" /> Loading trails...</div>}

@@ -119,9 +119,13 @@ export default function App() {
 
   const handleAddToRoute = useCallback((trail) => {
     setRouteTrails(prev => {
-      if (prev.find(t => t.name === trail.name && t.miles === trail.miles)) return prev;
+      if (prev.find(t => t.name === trail.name)) return prev;
       return [...prev, trail];
     });
+  }, []);
+
+  const handleRemoveFromRoute = useCallback((name) => {
+    setRouteTrails(prev => prev.filter(t => t.name !== name));
   }, []);
   const mapRef = useRef(null);
   const addToRouteRef = useRef(null);
@@ -205,7 +209,7 @@ export default function App() {
             routeTrails={routeTrails}
             onRouteTrailsChange={setRouteTrails}
           />
-          <TrailMap activeFilters={activeFilters} singletrackOnly={singletrackOnly} onMapReady={handleMapReady} routeMode={routeMode} onAddToRoute={handleAddToRoute} routeTrails={routeTrails} />
+          <TrailMap activeFilters={activeFilters} singletrackOnly={singletrackOnly} onMapReady={handleMapReady} routeMode={routeMode} onAddToRoute={handleAddToRoute} onRemoveFromRoute={handleRemoveFromRoute} routeTrails={routeTrails} />
           <WeatherWidget mapRef={mapRef} />
         </main>
       </div>
