@@ -205,7 +205,7 @@ export default function App() {
             routeTrails={routeTrails}
             onRouteTrailsChange={setRouteTrails}
           />
-          <TrailMap activeFilters={activeFilters} singletrackOnly={singletrackOnly} onMapReady={handleMapReady} routeMode={routeMode} onAddToRoute={handleAddToRoute} />
+          <TrailMap activeFilters={activeFilters} singletrackOnly={singletrackOnly} onMapReady={handleMapReady} routeMode={routeMode} onAddToRoute={handleAddToRoute} routeTrails={routeTrails} />
           <WeatherWidget mapRef={mapRef} />
         </main>
       </div>
