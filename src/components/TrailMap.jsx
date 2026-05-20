@@ -132,7 +132,7 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode,
   const activeInfoWindowRef = useRef(null);
   const activePolylinesRef = useRef([]);
   const routeModeRef = useRef(routeMode);
-  const routeTrailsRef = useRef(routeTrails);
+  const routeTrailsRef = useRef(routeTrails || []);
   useEffect(() => { routeTrailsRef.current = routeTrails || []; }, [routeTrails]);
   const routePolylinesRef = useRef([]);
   const labelsRef = useRef([]); // [{ marker, activities }]
