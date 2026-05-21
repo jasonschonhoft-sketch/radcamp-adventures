@@ -47,9 +47,10 @@ const MODAL_ACTIVITIES = [
   { key: 'horse', desc: '' },
 ];
 
-function WelcomeModal({ onSelect, onCamp }) {
+function WelcomeModal({ onSelect, onCamp, onShops }) {
   const [selected, setSelected] = React.useState([]);
   const [withCamp, setWithCamp] = React.useState(false);
+  const [withShops, setWithShops] = React.useState(false);
 
   function toggleActivity(key) {
     setSelected(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
@@ -64,6 +65,7 @@ function WelcomeModal({ onSelect, onCamp }) {
       onSelect(null, selected);
     }
     if (withCamp && onCamp) onCamp(true);
+    if (withShops && onShops) onShops(true);
   }
 
   return (
@@ -96,6 +98,10 @@ function WelcomeModal({ onSelect, onCamp }) {
           <input type="checkbox" checked={withCamp} onChange={e => setWithCamp(e.target.checked)} />
           Also show campgrounds
         </label>
+        <label className="welcome-camp-check">
+          <input type="checkbox" checked={withShops} onChange={e => setWithShops(e.target.checked)} />
+          Also show nearby shops
+        </label>
         <button className="welcome-go" onClick={handleGo}>
           Let's Go! →
         </button>
@@ -109,6 +115,7 @@ export default function App() {
   const [modalVisible, setModalVisible] = useState(showModal);
   const [singletrackOnly, setSingletrackOnly] = useState(false);
   const [campActive, setCampActive] = useState(false);
+  const [shopsActive, setShopsActive] = useState(false);
   const [routeMode, setRouteMode] = useState(false);
   const [routeTrails, setRouteTrails] = useState([]);
 
@@ -180,7 +187,7 @@ export default function App() {
 
   return (
     <APIProvider apiKey={apiKey}>
-      {modalVisible && <WelcomeModal onSelect={handleModalSelect} onCamp={setCampActive} />}
+      {modalVisible && <WelcomeModal onSelect={handleModalSelect} onCamp={setCampActive} onShops={setShopsActive} />}
       <div className="app">
         <header className="app-header">
           <div className="header-brand">
@@ -200,6 +207,8 @@ export default function App() {
             mapRef={mapRef}
             externalCampActive={campActive}
             onCampChange={setCampActive}
+            externalShopsActive={shopsActive}
+            onShopsChange={setShopsActive}
             onRouteModeChange={setRouteMode}
             routeTrails={routeTrails}
             onRouteTrailsChange={setRouteTrails}

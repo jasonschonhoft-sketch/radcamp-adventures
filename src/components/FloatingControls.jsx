@@ -130,7 +130,7 @@ function SidebarContent({
   );
 }
 
-export default function FloatingControls({ activeFilters, onToggle, singletrackOnly, onToggleSingletrack, mapRef, externalCampActive, onCampChange, onRouteModeChange, routeTrails: externalRouteTrails, onRouteTrailsChange }) {
+export default function FloatingControls({ activeFilters, onToggle, singletrackOnly, onToggleSingletrack, mapRef, externalCampActive, onCampChange, externalShopsActive, onShopsChange, onRouteModeChange, routeTrails: externalRouteTrails, onRouteTrailsChange }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [locating, setLocating] = useState(false);
   const [shopsActive, setShopsActive] = useState(false);
@@ -161,6 +161,10 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
   useEffect(() => {
     if (externalCampActive && !campActive) handleCamp();
   }, [externalCampActive]);
+
+  useEffect(() => {
+    if (externalShopsActive && !shopsActive) handleShops();
+  }, [externalShopsActive]);
 
   useEffect(() => {
     if (onRouteModeChange) onRouteModeChange(routeMode);
@@ -237,7 +241,7 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
   }
 
   function handleShops() {
-    if (shopsActive) { clearShopMarkers(); setShopsActive(false); return; }
+    if (shopsActive) { clearShopMarkers(); setShopsActive(false); if (onShopsChange) onShopsChange(false); return; }
     if (!placesLib || !mapRef.current) return;
     setShopsLoading(true);
     const map = mapRef.current;
@@ -245,13 +249,14 @@ export default function FloatingControls({ activeFilters, onToggle, singletrackO
     const service = new placesLib.PlacesService(map);
     let pending = SHOP_QUERIES.length;
     const all = [];
-    SHOP_QUERIES.forEach(query => {
-      service.textSearch({ location: center, radius: 80467, query }, (results, status) => {
+    SHOP_QUERIES.forEach(keyword => {
+      service.nearbySearch({ location: center, radius: 40233, keyword }, (results, status) => {
         if (status === placesLib.PlacesServiceStatus.OK && results) all.push(...results.slice(0, 5));
         if (--pending === 0) {
           setShopsLoading(false);
           if (all.length === 0) return;
           setShopsActive(true);
+          if (onShopsChange) onShopsChange(true);
           const seen = new Set();
           all.forEach(place => {
             if (seen.has(place.place_id) || !place.geometry?.location) return;

@@ -261,8 +261,8 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode,
           const visible = !!activeFiltersRef.current[activity];
 
           const dashedIcon = style.dotted ? [{
-            icon: { path: google.maps.SymbolPath.CIRCLE, fillOpacity: 1, fillColor: style.color, strokeOpacity: 0, scale: 2 },
-            offset: '0', repeat: '8px',
+            icon: { path: google.maps.SymbolPath.CIRCLE, fillOpacity: 0.8, fillColor: style.color, strokeOpacity: 0, scale: 1.5 },
+            offset: '0', repeat: '14px',
           }] : style.dashed ? [{
             icon: { path: 'M 0,-1 0,1', strokeOpacity: 0.9, scale: 3 },
             offset: '0', repeat: '12px',
