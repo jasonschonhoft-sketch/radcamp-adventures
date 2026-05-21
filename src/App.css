@@ -434,6 +434,7 @@ html, body, #root {
 .welcome-icon { font-size: 30px; display: block; margin-bottom: 12px; color: var(--accent); }
 .welcome-title { font-size: 20px; font-weight: 700; color: var(--text-pri); margin: 0 0 8px; }
 .welcome-sub { font-size: 13px; color: var(--text-sec); margin: 0; }
+.welcome-ai-note { font-size: 11px; color: #a3e635; margin: 6px 0 0; letter-spacing: 0.2px; }
 .welcome-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

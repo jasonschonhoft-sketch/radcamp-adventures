@@ -75,6 +75,7 @@ function WelcomeModal({ onSelect, onCamp, onShops }) {
           <img src="/logo.svg" alt="RadCamp" className="welcome-logo" />
           <h2 className="welcome-title">What are you looking for?</h2>
           <p className="welcome-sub">Select one or more — find your next Colorado adventure!</p>
+          <p className="welcome-ai-note">✨ AI-powered trail descriptions on every trail</p>
         </div>
         <div className="welcome-grid">
           {MODAL_ACTIVITIES.map(({ key }) => {
@@ -195,7 +196,7 @@ export default function App() {
             <span className="brand-name">RadCamp Adventures</span>
           </div>
           <SearchBar onPlaceSelect={handlePlaceSelect} />
-          <span className="header-tagline">Colorado Trail Explorer</span>
+          <span className="header-tagline">✨ AI-Powered Colorado Trail Explorer</span>
         </header>
 
         <main className="app-main">
