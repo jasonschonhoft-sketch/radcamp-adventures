@@ -23,7 +23,23 @@ function MapController({ onMapReady }) {
 
 const COLORADO_CENTER = { lat: 39.0, lng: -105.5 };
 const MIN_ZOOM_FOR_TRAILS = 9;
+const LABEL_MIN_ZOOM = 12; // trail name labels appear only past this zoom level
 const MAX_RECORDS = 2000;
+
+// Per-trail-name cache of AI descriptions, keyed by trail name. Survives
+// info-window open/close so we never pay for the same trail twice per session.
+const aiDescCache = new Map();
+
+// Midpoint (by point count) of the longest coordinate set, used to anchor labels.
+function getLabelPosition(coordSets) {
+  let longest = coordSets[0];
+  for (const cs of coordSets) {
+    if (cs && cs.length > (longest?.length || 0)) longest = cs;
+  }
+  if (!longest || longest.length === 0) return null;
+  const [lng, lat] = longest[Math.floor(longest.length / 2)];
+  return { lat, lng };
+}
 
 function getTrailActivities(props) {
   const acts = [];
@@ -69,20 +85,23 @@ function getTrailStyle(activity, props) {
   const isRoad = props.type === 'Road';
   const surface = (props.surface || '').toLowerCase();
 
-  // Moto singletrack = dashed bright red
-  if (isTrail && surface === 'dirt') {
+  // Moto (dirt_bike) singletrack = lime dotted markers. ONLY the "Moto"
+  // activity gets dots on dirt singletrack; every other activity (hiking, MTB,
+  // etc.) renders the same trail as a normal solid colored line.
+  if (activity === 'dirt_bike' && isTrail && surface === 'dirt') {
     return { color: '#a3e635', weight: 2, opacity: 0, dotted: true };
   }
   // Moto doubletrack/road = solid lighter red
   if (activity === 'dirt_bike' && isRoad) {
-    return { color: '#f87171', weight: 2, opacity: 0.85, dashed: false };
+    return { color: '#f87171', weight: 2, opacity: 0.85 };
   }
-  // UTV connecting roads
+  // UTV connecting roads = slightly heavier
   if (activity === 'ohv' && isRoad) {
-    return { color: cfg.color, weight: 2.5, opacity: 0.85, dashed: false };
+    return { color: cfg.color, weight: 2.5, opacity: 0.85 };
   }
 
-  return { color: cfg.color, weight: cfg.weight, opacity: isTrail && surface === 'dirt' ? 0 : 0.85, dashed: isTrail && surface === 'dirt' };
+  // Everything else (incl. hiking/MTB on dirt singletrack): solid colored line.
+  return { color: cfg.color, weight: cfg.weight, opacity: 0.85 };
 }
 
 function isSingletrack(props) {
@@ -118,8 +137,19 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode,
   const routeModeRef = useRef(routeMode);
   const routePolylinesRef = useRef([]);
   const routeTrailsRef = useRef([]);
+  const labelsRef = useRef([]); // [{ marker, activities }]
   useEffect(() => { routeModeRef.current = routeMode; }, [routeMode]);
   routeTrailsRef.current = routeTrails || [];
+
+  // Show/hide trail-name labels based on current zoom and active filters.
+  const refreshLabels = useCallback(() => {
+    if (!map) return;
+    const visibleZoom = map.getZoom() > LABEL_MIN_ZOOM;
+    labelsRef.current.forEach(({ marker, activities }) => {
+      const anyActive = activities.some(a => activeFiltersRef.current[a]);
+      marker.setMap(visibleZoom && anyActive ? map : null);
+    });
+  }, [map]);
   // Clear highlights when route mode turns off
   useEffect(() => {
     if (!routeMode) {
@@ -144,7 +174,8 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode,
         p.setMap(show ? map : null);
       });
     });
-  }, [activeFilters, singletrackOnly, map]);
+    refreshLabels();
+  }, [activeFilters, singletrackOnly, map, refreshLabels]);
 
   // Close info window when clicking on map
   useEffect(() => {
@@ -170,6 +201,8 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode,
         (polylinesRef.current[activity] || []).forEach(p => p.setMap(null));
         polylinesRef.current[activity] = [];
       });
+      labelsRef.current.forEach(({ marker }) => marker.setMap(null));
+      labelsRef.current = [];
       onStatusChange({ type: 'zoom', zoom });
       return;
     }
@@ -186,6 +219,9 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode,
         (polylinesRef.current[activity] || []).forEach(p => p.setMap(null));
         polylinesRef.current[activity] = [];
       });
+      labelsRef.current.forEach(({ marker }) => marker.setMap(null));
+      labelsRef.current = [];
+      const labeledNames = new Set(); // one label per unique trail name per load
 
       features.forEach(feature => {
         const { geometry, properties } = feature;
@@ -195,6 +231,31 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode,
 
         const coordSets = geometry.type === 'MultiLineString' ? geometry.coordinates : [geometry.coordinates];
         const singletrack = isSingletrack(properties);
+
+        // Trail-name label at the trail midpoint — only build past LABEL_MIN_ZOOM.
+        const labelName = properties.name?.trim();
+        if (zoom > LABEL_MIN_ZOOM && labelName && !labeledNames.has(labelName)) {
+          const pos = getLabelPosition(coordSets);
+          if (pos) {
+            labeledNames.add(labelName);
+            const anyActive = activities.some(a => activeFiltersRef.current[a]);
+            const marker = new google.maps.Marker({
+              position: pos,
+              map: anyActive ? map : null,
+              clickable: false,
+              zIndex: 1000,
+              icon: { path: google.maps.SymbolPath.CIRCLE, scale: 0, strokeOpacity: 0, fillOpacity: 0 },
+              label: {
+                text: labelName,
+                className: 'trail-label',
+                color: '#ffffff',
+                fontSize: '11px',
+                fontWeight: '600',
+              },
+            });
+            labelsRef.current.push({ marker, activities });
+          }
+        }
 
         activities.forEach(activity => {
           const style = getTrailStyle(activity, properties);
@@ -302,6 +363,25 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode,
               const lng = e.latLng.lng();
               const thumbUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=14&size=240x130&maptype=hybrid&key=${MAPS_API_KEY}`;
 
+              const displayName = properties.name?.trim() || 'Unnamed Trail';
+              const aiKey = trailName || displayName;
+              const aiTrailData = {
+                name: displayName,
+                activities: acts.map(a => ACTIVITY_CONFIG[a].label),
+                surface: surfaceLabel,
+                trailType: trailTypeLabel,
+                lengthMi: properties.length_mi_ ? Number(properties.length_mi_.toFixed(1)) : null,
+                minElevFt: minElev,
+                maxElevFt: maxElev,
+                manager,
+                lat,
+                lng,
+              };
+              const aiSection = `<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.08)">
+                <button id="ai-desc-btn" style="display:flex;align-items:center;justify-content:center;gap:5px;width:100%;background:rgba(163,230,53,0.1);border:1px solid rgba(163,230,53,0.35);color:#a3e635;font-size:11px;font-weight:600;padding:6px 8px;border-radius:8px;cursor:pointer;font-family:inherit">✨ AI trail description</button>
+                <div id="ai-desc-content" style="font-size:11px;line-height:1.45;color:#c7d0dd;margin-top:6px"></div>
+              </div>`;
+
               const infoWindow = new google.maps.InfoWindow({
                 content: `<div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;min-width:220px;max-width:240px;overflow:hidden;border-radius:10px">
                   <img src="${thumbUrl}" style="width:100%;height:130px;object-fit:cover;display:block;border-radius:10px 10px 0 0" />
@@ -316,6 +396,7 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode,
                       ${dogs && dogs !== 'no' ? `<span style="font-size:10px;background:rgba(255,255,255,0.07);color:#8a9bb0;padding:2px 7px;border-radius:10px">🐕 ${dogs}</span>` : ''}
                     </div>
                     ${manager ? `<div style="margin-top:6px;font-size:10px;color:rgba(255,255,255,0.25)">${manager}</div>` : ''}
+                    ${aiSection}
                     ${url && url.startsWith('http') ? `<a href="${url}" target="_blank" style="display:block;margin-top:6px;font-size:11px;color:#e67e22;text-decoration:none">More info →</a>` : ''}
                   </div>
                 </div>`,
@@ -324,6 +405,48 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode,
 
               infoWindow.open(map);
               activeInfoWindowRef.current = infoWindow;
+
+              // Wire the AI description button once the info-window DOM exists.
+              google.maps.event.addListener(infoWindow, 'domready', () => {
+                const btn = document.getElementById('ai-desc-btn');
+                const contentEl = document.getElementById('ai-desc-content');
+                if (!btn || !contentEl) return;
+
+                const cached = aiDescCache.get(aiKey);
+                if (cached) {
+                  btn.style.display = 'none';
+                  contentEl.textContent = cached;
+                  return;
+                }
+
+                btn.onclick = async () => {
+                  btn.disabled = true;
+                  btn.style.opacity = '0.6';
+                  btn.style.cursor = 'default';
+                  btn.textContent = 'Generating…';
+                  try {
+                    const res = await fetch('/api/trail-description', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(aiTrailData),
+                    });
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const data = await res.json();
+                    const desc = (data.description || '').trim();
+                    if (!desc) throw new Error('empty response');
+                    aiDescCache.set(aiKey, desc);
+                    btn.style.display = 'none';
+                    contentEl.textContent = desc; // textContent → no HTML injection
+                  } catch (err) {
+                    console.error('AI description error:', err);
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                    btn.textContent = '✨ AI trail description';
+                    contentEl.textContent = 'Could not generate a description. Try again.';
+                  }
+                };
+              });
 
               // Close on X click
               google.maps.event.addListener(infoWindow, 'closeclick', () => {
@@ -372,8 +495,17 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode,
       ACTIVITY_KEYS.forEach(activity => {
         (polylinesRef.current[activity] || []).forEach(p => p.setMap(null));
       });
+      labelsRef.current.forEach(({ marker }) => marker.setMap(null));
+      labelsRef.current = [];
     };
   }, [map, loadTrails]);
+
+  // Toggle label visibility instantly on zoom (no debounce / no refetch).
+  useEffect(() => {
+    if (!map) return;
+    const listener = map.addListener('zoom_changed', refreshLabels);
+    return () => google.maps.event.removeListener(listener);
+  }, [map, refreshLabels]);
 
   return null;
 }
