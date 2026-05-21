@@ -35,30 +35,6 @@ const RENDERS = {
     <path d="M11.5 8.5L10 12L13 12L15.5 10Z" fill="${c}"/>
   `,
 
-  ebike: c => `
-    <circle cx="5.5" cy="17.5" r="4.8" stroke="${c}" stroke-width="1.4"/>
-    <circle cx="5.5" cy="17.5" r="3.6" stroke="${c}" stroke-width="1.8" stroke-dasharray="1.9 1.3"/>
-    <circle cx="5.5" cy="17.5" r="1.8" stroke="${c}" stroke-width="0.7"/>
-    <circle cx="5.5" cy="17.5" r="0.8" fill="${c}"/>
-    <circle cx="18.5" cy="17.5" r="4.8" stroke="${c}" stroke-width="1.4"/>
-    <circle cx="18.5" cy="17.5" r="3.6" stroke="${c}" stroke-width="1.8" stroke-dasharray="1.9 1.3"/>
-    <circle cx="18.5" cy="17.5" r="1.8" stroke="${c}" stroke-width="0.7"/>
-    <circle cx="18.5" cy="17.5" r="0.8" fill="${c}"/>
-    <line x1="5.5" y1="17.5" x2="10" y2="12" stroke="${c}" stroke-width="1.4" stroke-linecap="round"/>
-    <line x1="10" y1="12" x2="15" y2="12" stroke="${c}" stroke-width="1.4" stroke-linecap="round"/>
-    <line x1="15" y1="12" x2="18.5" y2="17.5" stroke="${c}" stroke-width="1.4" stroke-linecap="round"/>
-    <line x1="10" y1="12" x2="12" y2="17.5" stroke="${c}" stroke-width="1.2" stroke-linecap="round"/>
-    <line x1="12" y1="17.5" x2="5.5" y2="17.5" stroke="${c}" stroke-width="1.2" stroke-linecap="round"/>
-    <line x1="15" y1="12" x2="12" y2="17.5" stroke="${c}" stroke-width="1.2" stroke-linecap="round"/>
-    <line x1="10" y1="12" x2="10.5" y2="9.5" stroke="${c}" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="9" y1="9.5" x2="12.5" y2="9.5" stroke="${c}" stroke-width="1.8" stroke-linecap="round"/>
-    <line x1="15" y1="12" x2="16" y2="9.5" stroke="${c}" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="14.5" y1="9" x2="18" y2="8.5" stroke="${c}" stroke-width="1.8" stroke-linecap="round"/>
-    <ellipse cx="13" cy="8" rx="1.7" ry="1.4" fill="${c}"/>
-    <path d="M11.5 8.5L10 12L13 12L15.5 10Z" fill="${c}"/>
-    <polygon points="22,1 20,5.5 22,5.5 19.5,10.5 24,4.5 22,4.5" fill="${c}"/>
-  `,
-
   bike_path: c => `
     <path d="M2 23C2.5 19 2 16 4 13C6 10 6.5 8 5 5C4 3 5 1.5 7 1" stroke="${c}" stroke-width="1.3" stroke-linecap="round"/>
     <path d="M6 23C6.5 19 6 16 8 13C10 10 10.5 8 9 5C8 3 9 1.5 11 1" stroke="${c}" stroke-width="1.3" stroke-linecap="round"/>

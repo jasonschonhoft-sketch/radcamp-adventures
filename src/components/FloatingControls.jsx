@@ -4,9 +4,9 @@ import { useMapsLibrary } from '@vis.gl/react-google-maps';
 import { ACTIVITY_CONFIG } from '../config';
 
 const DISPLAY_KEYS = [
-  'dirt_bike', 'ohv', 'edirt_bike',
+  'dirt_bike', 'ohv',
   'hiking', 'mountain_bike', 'road_bike', 'gravel_bike',
-  'ebike', 'horse', 'snowmobile',
+  'horse', 'snowmobile',
 ];
 
 const SHOP_QUERIES = ['bicycle shop', 'motorcycle shop', 'snowmobile dealer'];

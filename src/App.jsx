@@ -13,9 +13,6 @@ const URL_PARAM_MAP = {
   dirtbike: 'dirt_bike',
   roadbike: 'road_bike',
   gravelbike: 'gravel_bike',
-  ebike: 'ebike',
-  emoto: 'edirt_bike',
-  edirtbike: 'edirt_bike',
   hiking: 'hiking',
   ohv: 'ohv',
   snowmobile: 'snowmobile',
@@ -41,10 +38,8 @@ const showModal = startActivity === null;
 
 const MODAL_ACTIVITIES = [
   { key: 'dirt_bike', desc: '' },
-  { key: 'edirt_bike', desc: '' },
   { key: 'ohv', desc: '' },
   { key: 'snowmobile', desc: '' },
-  { key: 'ebike', desc: '' },
   { key: 'mountain_bike', desc: '' },
   { key: 'gravel_bike', desc: '' },
   { key: 'road_bike', desc: '' },

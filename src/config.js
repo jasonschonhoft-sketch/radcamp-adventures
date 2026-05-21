@@ -18,12 +18,6 @@ export const ACTIVITY_CONFIG = {
     color: '#3b82f6',
     weight: 2,
   },
-  ebike: {
-    label: 'E-Bike',
-    color: '#facc15',
-    weight: 2,
-    note: 'All trails where bikes are permitted',
-  },
   bike_path: {
     label: 'Bike Path',
     color: '#fb7185',
@@ -46,12 +40,6 @@ export const ACTIVITY_CONFIG = {
     label: 'Moto',
     color: '#ef4444',
     weight: 2.5,
-  },
-  edirt_bike: {
-    label: 'E-Moto',
-    color: '#c084fc',
-    weight: 2.5,
-    note: 'Same access as moto',
   },
   ohv: {
     label: 'UTV / 4x4',

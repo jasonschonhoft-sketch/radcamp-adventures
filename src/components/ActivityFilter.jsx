@@ -1,16 +1,14 @@
 import React from 'react';
 
-const ACTIVITY_KEYS = ['hiking', 'mountain_bike', 'bike_path', 'road_bike', 'gravel_bike', 'ebike', 'dirt_bike', 'ohv', 'edirt_bike', 'snowmobile'];
+const ACTIVITY_KEYS = ['hiking', 'mountain_bike', 'bike_path', 'road_bike', 'gravel_bike', 'dirt_bike', 'ohv', 'snowmobile'];
 
 const ACTIVITY_CONFIG = {
   hiking: { color: '#22c55e', label: 'Hiking' },
   mountain_bike: { color: '#3b82f6', label: 'MTB' },
-  ebike: { color: '#a855f7', label: 'E-Bike', note: 'Class 1/2' },
   bike_path: { color: '#06b6d4', label: 'Bike Path', note: 'Paved' },
   road_bike: { color: '#ef4444', label: 'Road Bike' },
   gravel_bike: { color: '#f59e0b', label: 'Gravel Bike' },
   dirt_bike: { color: '#f97316', label: 'Moto' },
-  edirt_bike: { color: '#d946ef', label: 'E-Moto', note: 'Surron/Segway' },
   ohv: { color: '#eab308', label: 'OHV / Side-by-Side' },
   snowmobile: { color: '#14b8a6', label: 'Snowmobile' }
 };
@@ -21,10 +19,8 @@ const SECTION_LABELS = {
   bike_path: null,
   road_bike: null,
   gravel_bike: null,
-  ebike: null,
   dirt_bike: 'MOTORIZED',
   ohv: null,
-  edirt_bike: null,
   snowmobile: 'WINTER',
 };
 
