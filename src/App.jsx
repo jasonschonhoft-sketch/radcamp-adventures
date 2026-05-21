@@ -97,7 +97,7 @@ function WelcomeModal({ onSelect, onCamp }) {
           Also show campgrounds
         </label>
         <button className="welcome-go" onClick={handleGo}>
-          Let's Ride →
+          Let's Go! →
         </button>
       </div>
     </div>
