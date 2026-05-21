@@ -436,7 +436,7 @@ html, body, #root {
 .welcome-sub { font-size: 13px; color: var(--text-sec); margin: 0; }
 .welcome-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
   margin-bottom: 16px;
 }
