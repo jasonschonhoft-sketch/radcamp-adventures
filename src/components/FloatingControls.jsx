@@ -4,7 +4,7 @@ import { useMapsLibrary } from '@vis.gl/react-google-maps';
 import { ACTIVITY_CONFIG } from '../config';
 
 const DISPLAY_KEYS = [
-  'dirt_bike', 'ohv',
+  'dirt_bike', 'ohv', 'edirt_bike',
   'hiking', 'mountain_bike', 'road_bike', 'gravel_bike',
   'ebike', 'horse', 'snowmobile',
 ];
