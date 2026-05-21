@@ -47,12 +47,6 @@ export const ACTIVITY_CONFIG = {
     color: '#ef4444',
     weight: 2.5,
   },
-  edirt_bike: {
-    label: 'E-Moto',
-    color: '#c084fc',
-    weight: 2.5,
-    note: 'Same access as moto',
-  },
   ohv: {
     label: 'UTV / 4x4',
     color: '#fbbf24',

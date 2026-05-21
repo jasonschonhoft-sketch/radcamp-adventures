@@ -89,27 +89,6 @@ const RENDERS = {
     <line x1="17" y1="9" x2="18.5" y2="7" stroke="${c}" stroke-width="1.3" stroke-linecap="round"/>
   `,
 
-  emoto: c => `
-    <circle cx="6" cy="17.5" r="5.2" stroke="${c}" stroke-width="1.5"/>
-    <circle cx="6" cy="17.5" r="3.9" stroke="${c}" stroke-width="2.4" stroke-dasharray="2.1 1.3"/>
-    <circle cx="6" cy="17.5" r="2" stroke="${c}" stroke-width="0.8"/>
-    <circle cx="6" cy="17.5" r="0.9" fill="${c}"/>
-    <circle cx="20" cy="18.5" r="4.2" stroke="${c}" stroke-width="1.5"/>
-    <circle cx="20" cy="18.5" r="3.1" stroke="${c}" stroke-width="2.1" stroke-dasharray="1.8 1.1"/>
-    <circle cx="20" cy="18.5" r="1.6" stroke="${c}" stroke-width="0.8"/>
-    <circle cx="20" cy="18.5" r="0.8" fill="${c}"/>
-    <polygon points="6,17.5 10,14.5 15.5,13 17,9.5 13,10.5 8,12.5" fill="${c}"/>
-    <line x1="16.5" y1="10" x2="20" y2="18.5" stroke="${c}" stroke-width="1.8" stroke-linecap="round"/>
-    <line x1="15.5" y1="12" x2="19.5" y2="18" stroke="${c}" stroke-width="1.1" stroke-linecap="round" opacity="0.7"/>
-    <line x1="17" y1="9.5" x2="18" y2="7" stroke="${c}" stroke-width="1.5" stroke-linecap="round"/>
-    <line x1="16.5" y1="7" x2="21" y2="7" stroke="${c}" stroke-width="2" stroke-linecap="round"/>
-    <path d="M10.5 15.5Q9 16.5 8.5 14.5Q8 12.5 10 12.5" stroke="${c}" stroke-width="1.2" stroke-linecap="round"/>
-    <ellipse cx="15.5" cy="6.5" rx="1.9" ry="1.6" fill="${c}"/>
-    <path d="M14 7.5L11.5 10.5L14.5 11.5L17.5 9Z" fill="${c}"/>
-    <line x1="17" y1="9" x2="18.5" y2="7" stroke="${c}" stroke-width="1.3" stroke-linecap="round"/>
-    <polygon points="3.5,1 1.5,6 3.5,6 2,10.5 6.5,4.5 4.5,4.5" fill="${c}"/>
-  `,
-
   ohv: c => `
     <circle cx="5.5" cy="18.5" r="4.5" stroke="${c}" stroke-width="1.5"/>
     <circle cx="5.5" cy="18.5" r="3.4" stroke="${c}" stroke-width="2.3" stroke-dasharray="2 1.3"/>

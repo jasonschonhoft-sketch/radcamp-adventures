@@ -69,7 +69,6 @@ function getTrailActivities(props) {
 
   if (props.motorcycle === 'yes') {
     acts.push('dirt_bike');
-    acts.push('edirt_bike');
   }
 
   if (props.atv === 'yes' || props.ohv_gt_50 === 'yes') acts.push('ohv');
