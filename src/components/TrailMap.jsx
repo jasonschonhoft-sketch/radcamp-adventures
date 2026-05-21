@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Map, useMap } from '@vis.gl/react-google-maps';
+import { Map as GoogleMap, useMap } from '@vis.gl/react-google-maps';
 import { ACTIVITY_CONFIG, ACTIVITY_KEYS, COTREX_URL, PAVED_SURFACES } from '../config';
 
 const MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -514,7 +514,7 @@ export default function TrailMap({ activeFilters, singletrackOnly, onMapReady, r
   const [status, setStatus] = useState({ type: 'idle' });
   return (
     <div className="map-wrapper">
-      <Map
+      <GoogleMap
         defaultCenter={COLORADO_CENTER}
         defaultZoom={10}
         gestureHandling="greedy"
@@ -527,7 +527,7 @@ export default function TrailMap({ activeFilters, singletrackOnly, onMapReady, r
       >
         {onMapReady && <MapController onMapReady={onMapReady} />}
         <TrailLayer activeFilters={activeFilters} singletrackOnly={singletrackOnly} onStatusChange={setStatus} routeMode={routeMode} onAddToRoute={onAddToRoute} onRemoveFromRoute={onRemoveFromRoute} routeTrails={routeTrails} />
-      </Map>
+      </GoogleMap>
       <div className="map-status">
         {status.type === 'loading' && <div className="status-badge loading"><span className="spinner" /> Loading trails...</div>}
         {status.type === 'loaded' && <div className="status-badge loaded">{status.count.toLocaleString()} trail segments{status.exceeded && ' — zoom in for more'}</div>}
