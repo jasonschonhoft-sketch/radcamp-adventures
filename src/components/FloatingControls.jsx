@@ -63,7 +63,7 @@ function SidebarContent({
               </button>
               {key === 'dirt_bike' && (
                 <button className={`fc-item fc-sub-toggle${singletrackOnly ? ' active' : ''}`} onClick={onToggleSingletrack}>
-                  <span className="fc-sub-dash">–</span>
+                  <div className="fc-singletrack-swatch" style={{ width: '18px', height: '3px', background: '#a3e635', borderRadius: '1.5px', flexShrink: 0, marginRight: '2px' }} />
                   <span className="fc-label">Singletrack Only</span>
                   {singletrackOnly && (
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" className="fc-check">
