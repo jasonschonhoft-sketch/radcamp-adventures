@@ -87,7 +87,7 @@ function getTrailStyle(activity, props) {
   // activity gets dots on dirt singletrack; every other activity (hiking, MTB,
   // etc.) renders the same trail as a normal solid colored line.
   if (activity === 'dirt_bike' && isTrail && surface === 'dirt') {
-    return { color: '#a3e635', weight: 2, opacity: 0, dotted: true };
+    return { color: '#a3e635', weight: 2.5, opacity: 0, dotted: true };
   }
   // Moto doubletrack/road = solid lighter red
   if (activity === 'dirt_bike' && isRoad) {
@@ -261,8 +261,8 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode,
           const visible = !!activeFiltersRef.current[activity];
 
           const dashedIcon = style.dotted ? [{
-            icon: { path: google.maps.SymbolPath.CIRCLE, fillOpacity: 0.8, fillColor: style.color, strokeOpacity: 0, scale: 1.5 },
-            offset: '0', repeat: '14px',
+            icon: { path: 'M 0,-1.5 0,1.5', strokeColor: style.color, strokeOpacity: 1, strokeWeight: 4, fillOpacity: 0, scale: 2 },
+            offset: '0', repeat: '5px',
           }] : style.dashed ? [{
             icon: { path: 'M 0,-1 0,1', strokeOpacity: 0.9, scale: 3 },
             offset: '0', repeat: '12px',
