@@ -11,6 +11,82 @@ const DISPLAY_KEYS = [
 
 const SHOP_QUERIES = ['bicycle shop', 'motorcycle shop', 'snowmobile dealer'];
 
+const RIDB_URL = 'https://ridb.recreation.gov/api/v1/facilities';
+
+// Fetch official federal campgrounds from the Recreation.gov RIDB API near a
+// center point. Always resolves to an array (never throws): on any failure
+// (network error, non-200, malformed body) it logs and returns [] so the map
+// stays clean and the app never crashes.
+async function fetchRecGovCampgrounds(centerLat, centerLng) {
+  const apikey = import.meta.env.VITE_RECGOV_API_KEY;
+  if (!apikey) {
+    console.warn('[RecGov] VITE_RECGOV_API_KEY is not set — skipping campground fetch.');
+    return [];
+  }
+  const params = new URLSearchParams({
+    activity: 'CAMPING',
+    state: 'CO',
+    limit: '500',
+    latitude: String(centerLat),
+    longitude: String(centerLng),
+    radius: '50',
+  });
+  try {
+    const res = await fetch(`${RIDB_URL}?${params}`, { headers: { apikey } });
+    if (!res.ok) {
+      console.error(`[RecGov] RIDB request failed: ${res.status} ${res.statusText}`);
+      return [];
+    }
+    const data = await res.json();
+    const records = Array.isArray(data?.RECDATA) ? data.RECDATA : [];
+    return records
+      .map(f => ({
+        id: f.FacilityID,
+        name: f.FacilityName,
+        lat: Number(f.FacilityLatitude),
+        lng: Number(f.FacilityLongitude),
+        type: f.FacilityTypeDescription || '',
+        description: f.FacilityDescription || '',
+        phone: f.FacilityPhone || '',
+        email: f.FacilityEmail || '',
+        reservationUrl: f.FacilityReservationURL || '',
+        directions: f.FacilityDirections || '',
+      }))
+      // Drop anything without a usable coordinate (missing or zero).
+      .filter(f => Number.isFinite(f.lat) && Number.isFinite(f.lng) && f.lat !== 0 && f.lng !== 0);
+  } catch (err) {
+    console.error('[RecGov] RIDB fetch error:', err);
+    return [];
+  }
+}
+
+// Strip HTML tags from RIDB descriptions, collapse whitespace, truncate.
+function stripAndTruncate(html, max = 150) {
+  if (!html) return '';
+  const text = String(html).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  return text.length > max ? text.slice(0, max).trimEnd() + '…' : text;
+}
+
+// Minimal HTML escaping for text injected into the popup markup.
+function escapeHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// Great-circle distance in miles between two lat/lng points (haversine).
+function milesBetween(lat1, lng1, lat2, lng2) {
+  const toRad = d => (d * Math.PI) / 180;
+  const R = 3958.8; // Earth radius in miles
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
 function SidebarContent({
   activeFilters, onToggle, findSingletrack, onToggleSingletrack, onShowAllTrails,
   onClose, showClose,
@@ -145,6 +221,10 @@ export default function FloatingControls({ activeFilters, onToggle, findSingletr
   const [campActive, setCampActiveInternal] = useState(false);
   const [campLoading, setCampLoading] = useState(false);
   const campMarkersRef = useRef([]);
+  const campLastCoordsRef = useRef(null);   // last fetched {lat, lng}
+  const campDebounceRef = useRef(null);     // debounce timer for map moves
+  const campMoveListenerRef = useRef(null); // google maps center_changed listener
+  const campReqIdRef = useRef(0);           // guard against stale in-flight responses
   const [routeMode, setRouteMode] = useState(false);
   const [routeTrailsInternal, setRouteTrailsInternal] = useState([]);
   const routeTrails = externalRouteTrails ?? routeTrailsInternal;
@@ -200,49 +280,87 @@ export default function FloatingControls({ activeFilters, onToggle, findSingletr
 
   function clearShopMarkers() { shopMarkersRef.current.forEach(m => m.setMap(null)); shopMarkersRef.current = []; }
   function clearCampMarkers() { campMarkersRef.current.forEach(m => m.setMap(null)); campMarkersRef.current = []; }
+  function stopCampWatch() {
+    if (campMoveListenerRef.current) { google.maps.event.removeListener(campMoveListenerRef.current); campMoveListenerRef.current = null; }
+    if (campDebounceRef.current) { clearTimeout(campDebounceRef.current); campDebounceRef.current = null; }
+  }
   useEffect(() => () => clearShopMarkers(), []);
-  useEffect(() => () => clearCampMarkers(), []);
+  useEffect(() => () => { clearCampMarkers(); stopCampWatch(); }, []);
+
+  // Build the dark-themed campground popup HTML (matches the trail popups).
+  function campPopupContent(f) {
+    const desc = stripAndTruncate(f.description, 150);
+    const btn = 'display:inline-block;font-size:11px;font-weight:600;text-decoration:none;padding:6px 10px;border-radius:8px;text-align:center';
+    const reserve = f.reservationUrl
+      ? `<a href="${escapeHtml(f.reservationUrl)}" target="_blank" rel="noopener noreferrer" style="${btn};background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.4);color:#22c55e">Reserve on Recreation.gov</a>`
+      : '';
+    const directions = `<a href="https://www.google.com/maps/dir/?api=1&destination=${f.lat},${f.lng}" target="_blank" rel="noopener noreferrer" style="${btn};background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#c7d0dd">Get Directions</a>`;
+    return `<div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;padding:12px 14px;min-width:200px;max-width:280px">
+      <div style="font-size:14px;font-weight:700;color:#e8edf5;margin-bottom:2px;line-height:1.3">${escapeHtml(f.name || 'Campground')}</div>
+      ${f.type ? `<div style="font-size:10px;color:#22c55e;font-weight:600;letter-spacing:0.5px;margin-bottom:6px">${escapeHtml(f.type)}</div>` : ''}
+      ${desc ? `<div style="font-size:11px;line-height:1.45;color:#c7d0dd;margin-bottom:8px">${escapeHtml(desc)}</div>` : ''}
+      <div style="display:flex;flex-wrap:wrap;gap:6px">${reserve}${directions}</div>
+      <div style="font-size:9px;color:rgba(255,255,255,0.25);margin-top:8px">Data: Recreation.gov</div>
+    </div>`;
+  }
+
+  // Fetch + render campgrounds for the current map center. Skips the refetch
+  // when the center hasn't moved more than ~5 miles (unless `force`). Resolves
+  // quietly on any error so the map just stays clean.
+  async function loadCampgrounds(force) {
+    const map = mapRef.current;
+    if (!map) return;
+    const c = map.getCenter();
+    if (!c) return;
+    const lat = c.lat();
+    const lng = c.lng();
+    const last = campLastCoordsRef.current;
+    if (!force && last && milesBetween(lat, lng, last.lat, last.lng) < 5) return;
+    campLastCoordsRef.current = { lat, lng };
+
+    const myReq = ++campReqIdRef.current;
+    setCampLoading(true);
+    const facilities = await fetchRecGovCampgrounds(lat, lng);
+    setCampLoading(false);
+    // Ignore stale responses from earlier pans, or if the layer was turned off.
+    if (myReq !== campReqIdRef.current) return;
+
+    clearCampMarkers();
+    const infoWindow = new google.maps.InfoWindow();
+    facilities.forEach(f => {
+      const marker = new google.maps.Marker({
+        position: { lat: f.lat, lng: f.lng }, map,
+        icon: { path: google.maps.SymbolPath.CIRCLE, scale: 9, fillColor: '#22c55e', fillOpacity: 0.92, strokeColor: '#fff', strokeWeight: 2 },
+        title: f.name, zIndex: 200,
+      });
+      marker.addListener('click', () => {
+        infoWindow.setContent(campPopupContent(f));
+        infoWindow.open(map, marker);
+      });
+      campMarkersRef.current.push(marker);
+    });
+  }
 
   function handleCamp() {
-    if (campActive) { clearCampMarkers(); setCampActive(false); return; }
-    if (!placesLib || !mapRef.current) return;
-    setCampLoading(true);
-    const map = mapRef.current;
-    const center = map.getCenter();
-    const service = new placesLib.PlacesService(map);
-    const queries = ['campground', 'rv park', 'camping'];
-    let pending = queries.length;
-    const all = [];
-    queries.forEach(query => {
-      service.textSearch({ location: center, radius: 80467, query }, (results, status) => {
-        if (status === placesLib.PlacesServiceStatus.OK && results) all.push(...results.slice(0, 8));
-        if (--pending === 0) {
-          setCampLoading(false);
-          if (all.length === 0) return;
-          setCampActive(true);
-          const seen = new Set();
-          all.forEach(place => {
-            if (seen.has(place.place_id) || !place.geometry?.location) return;
-            seen.add(place.place_id);
-            const marker = new google.maps.Marker({
-              position: place.geometry.location, map,
-              icon: { path: google.maps.SymbolPath.CIRCLE, scale: 9, fillColor: '#22c55e', fillOpacity: 0.92, strokeColor: '#fff', strokeWeight: 2 },
-              title: place.name, zIndex: 200,
-            });
-            marker.addListener('click', () => {
-              new google.maps.InfoWindow({
-                content: `<div style="font-family:-apple-system,sans-serif;padding:12px 14px;min-width:180px;max-width:260px">
-                  <div style="font-size:13px;font-weight:700;color:#e8edf5;margin-bottom:4px">${place.name}</div>
-                  <div style="font-size:11px;color:#8a9bb0;line-height:1.4;margin-bottom:6px">${place.vicinity || ''}</div>
-                  ${place.rating ? `<div style="font-size:11px;color:#22c55e;margin-bottom:6px">${place.rating}★ ${place.user_ratings_total ? '(' + place.user_ratings_total + ' reviews)' : ''}</div>` : ''}
-                  <a href="https://www.google.com/maps/place/?q=place_id:${place.place_id}" target="_blank" style="font-size:11px;color:#22c55e;text-decoration:none">View &amp; Book →</a>
-                </div>`,
-              }).open(map, marker);
-            });
-            campMarkersRef.current.push(marker);
-          });
-        }
-      });
+    if (campActive) {
+      stopCampWatch();
+      clearCampMarkers();
+      campLastCoordsRef.current = null;
+      campReqIdRef.current++; // invalidate any in-flight response
+      setCampActive(false);
+      return;
+    }
+    if (!mapRef.current) return;
+    // Activate immediately so the toggle reflects state and the refetch watcher
+    // attaches even before results arrive (empty results just leave a clean map).
+    setCampActive(true);
+    loadCampgrounds(true);
+    // Refetch as the map center moves (debounced 500ms; the 5-mile check inside
+    // loadCampgrounds avoids hammering the API on small pans).
+    stopCampWatch();
+    campMoveListenerRef.current = mapRef.current.addListener('center_changed', () => {
+      if (campDebounceRef.current) clearTimeout(campDebounceRef.current);
+      campDebounceRef.current = setTimeout(() => loadCampgrounds(false), 500);
     });
   }
 
