@@ -677,6 +677,80 @@ html, body, #root {
 .fc-route-clear { display: block; width: calc(100% - 28px); margin: 0 14px 4px; background: none; border: none; color: rgba(255,255,255,0.2); font-size: 11px; cursor: pointer; text-align: left; padding: 2px 0; font-family: inherit; }
 .fc-route-clear:hover { color: #ef4444; }
 
+/* "Connector trails are hidden" note inside the route planner — amber so it
+   reads as a helpful tip, not an error. Only shown when Find Singletrack is on. */
+.fc-route-note {
+  font-size: 11px;
+  line-height: 1.5;
+  color: rgba(251,191,36,0.85);
+  background: rgba(251,191,36,0.08);
+  border: 1px solid rgba(251,191,36,0.2);
+  border-radius: 6px;
+  margin: 4px 14px 6px;
+  padding: 6px 10px;
+}
+.fc-route-note-link {
+  background: none;
+  border: none;
+  color: #fbbf24;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.fc-route-note-link:hover { color: #fcd34d; }
+
+/* "Showing singletrack only" recovery banner. Anchored to the top-center of the
+   map area (inside .app-main, which is position:relative) so it sits just below
+   the header. Fades in/out via the .visible class. */
+.singletrack-banner {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: rgba(10,11,15,0.92);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+  font-size: 13px;
+  color: rgba(255,255,255,0.92);
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+}
+.singletrack-banner.visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+.singletrack-banner-text { font-weight: 500; }
+.singletrack-banner-link {
+  background: none;
+  border: none;
+  color: #a3e635;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.singletrack-banner-link:hover { color: #b9f04a; }
+
 @media (max-width: 640px) {
   .fc-label { color: rgba(255,255,255,0.9) !important; font-size: 14px !important; }
   .fc-item:not(.active) .fc-label { color: rgba(255,255,255,0.7) !important; }

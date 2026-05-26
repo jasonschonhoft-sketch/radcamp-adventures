@@ -114,7 +114,7 @@ function WelcomeModal({ onSelect, onCamp, onShops }) {
 export default function App() {
   const [activeFilters, setActiveFilters] = useState(() => makeFilters(startActivity));
   const [modalVisible, setModalVisible] = useState(showModal);
-  const [highlightSingletrack, setHighlightSingletrack] = useState(true);
+  const [findSingletrack, setFindSingletrack] = useState(false);
   const [campActive, setCampActive] = useState(false);
   const [shopsActive, setShopsActive] = useState(false);
   const [routeMode, setRouteMode] = useState(false);
@@ -147,7 +147,8 @@ export default function App() {
     setModalVisible(false);
   }
 
-  const handleToggleSingletrack = useCallback(() => setHighlightSingletrack(v => !v), []);
+  const handleToggleSingletrack = useCallback(() => setFindSingletrack(v => !v), []);
+  const handleShowAllTrails = useCallback(() => setFindSingletrack(false), []);
 
   const handleMapReady = useCallback((map) => {
     mapRef.current = map;
@@ -203,8 +204,9 @@ export default function App() {
           <FloatingControls
             activeFilters={activeFilters}
             onToggle={toggleFilter}
-            highlightSingletrack={highlightSingletrack}
+            findSingletrack={findSingletrack}
             onToggleSingletrack={handleToggleSingletrack}
+            onShowAllTrails={handleShowAllTrails}
             mapRef={mapRef}
             externalCampActive={campActive}
             onCampChange={setCampActive}
@@ -214,8 +216,12 @@ export default function App() {
             routeTrails={routeTrails}
             onRouteTrailsChange={setRouteTrails}
           />
-          <TrailMap activeFilters={activeFilters} highlightSingletrack={highlightSingletrack} onMapReady={handleMapReady} routeMode={routeMode} onAddToRoute={handleAddToRoute} onRemoveFromRoute={handleRemoveFromRoute} routeTrails={routeTrails} />
+          <TrailMap activeFilters={activeFilters} findSingletrack={findSingletrack} onMapReady={handleMapReady} routeMode={routeMode} onAddToRoute={handleAddToRoute} onRemoveFromRoute={handleRemoveFromRoute} routeTrails={routeTrails} />
           <WeatherWidget mapRef={mapRef} />
+          <div className={`singletrack-banner${findSingletrack ? ' visible' : ''}`} role="status" aria-hidden={!findSingletrack}>
+            <span className="singletrack-banner-text">🔍 Showing singletrack only</span>
+            <button className="singletrack-banner-link" onClick={handleShowAllTrails}>Show all trails</button>
+          </div>
         </main>
       </div>
     </APIProvider>

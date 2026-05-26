@@ -12,7 +12,7 @@ const DISPLAY_KEYS = [
 const SHOP_QUERIES = ['bicycle shop', 'motorcycle shop', 'snowmobile dealer'];
 
 function SidebarContent({
-  activeFilters, onToggle, highlightSingletrack, onToggleSingletrack,
+  activeFilters, onToggle, findSingletrack, onToggleSingletrack, onShowAllTrails,
   onClose, showClose,
   campActive, onToggleCamp, campLoading,
   shopsActive, onToggleShops,
@@ -62,10 +62,10 @@ function SidebarContent({
                 )}
               </button>
               {key === 'dirt_bike' && (
-                <button className={`fc-item fc-sub-toggle${highlightSingletrack ? ' active' : ''}`} onClick={onToggleSingletrack}>
+                <button className={`fc-item fc-sub-toggle${findSingletrack ? ' active' : ''}`} onClick={onToggleSingletrack}>
                   <div className="fc-singletrack-swatch" style={{ width: '18px', height: '3px', background: '#a3e635', borderRadius: '1.5px', flexShrink: 0, marginRight: '2px' }} />
-                  <span className="fc-label">Highlight Singletrack</span>
-                  {highlightSingletrack && (
+                  <span className="fc-label">Find Singletrack</span>
+                  {findSingletrack && (
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" className="fc-check">
                       <polyline points="20 6 9 17 4 12"/>
                     </svg>
@@ -86,6 +86,12 @@ function SidebarContent({
 
         {routeMode && (
           <div className="fc-route-panel">
+            {findSingletrack && (
+              <div className="fc-route-note">
+                Connector trails are hidden.{' '}
+                <button className="fc-route-note-link" onClick={onShowAllTrails}>Show all trails</button>
+              </div>
+            )}
             {routeTrails.length === 0 ? (
               <div className="fc-route-empty">Tap trails on the map to add them</div>
             ) : (
@@ -130,7 +136,7 @@ function SidebarContent({
   );
 }
 
-export default function FloatingControls({ activeFilters, onToggle, highlightSingletrack, onToggleSingletrack, mapRef, externalCampActive, onCampChange, externalShopsActive, onShopsChange, onRouteModeChange, routeTrails: externalRouteTrails, onRouteTrailsChange }) {
+export default function FloatingControls({ activeFilters, onToggle, findSingletrack, onToggleSingletrack, onShowAllTrails, mapRef, externalCampActive, onCampChange, externalShopsActive, onShopsChange, onRouteModeChange, routeTrails: externalRouteTrails, onRouteTrailsChange }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [locating, setLocating] = useState(false);
   const [shopsActive, setShopsActive] = useState(false);
@@ -302,7 +308,7 @@ export default function FloatingControls({ activeFilters, onToggle, highlightSin
   }
 
   const sidebarProps = {
-    activeFilters, onToggle, highlightSingletrack, onToggleSingletrack,
+    activeFilters, onToggle, findSingletrack, onToggleSingletrack, onShowAllTrails,
     campActive, onToggleCamp: handleCamp, campLoading,
     shopsActive, onToggleShops: handleShops,
     routeMode, onToggleRoute: () => { const next = !routeMode; setRouteMode(next); if (onRouteModeChange) onRouteModeChange(next); },
