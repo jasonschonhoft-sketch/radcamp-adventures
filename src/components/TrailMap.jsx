@@ -76,17 +76,20 @@ function getTrailActivities(props) {
   return acts;
 }
 
-function getTrailStyle(activity, props) {
+function getTrailStyle(activity, props, highlightSingletrack = true) {
   const cfg = ACTIVITY_CONFIG[activity];
   if (!cfg) return null;
   const isTrail = props.type === 'Trail';
   const isRoad = props.type === 'Road';
   const surface = (props.surface || '').toLowerCase();
 
-  // Moto (dirt_bike) singletrack = lime dotted markers. ONLY the "Moto"
-  // activity gets dots on dirt singletrack; every other activity (hiking, MTB,
-  // etc.) renders the same trail as a normal solid colored line.
-  if (activity === 'dirt_bike' && isTrail && surface === 'dirt') {
+  // Moto (dirt_bike) singletrack = lime dotted markers, but ONLY when the
+  // "Highlight Singletrack" toggle is on. ONLY the "Moto" activity ever gets
+  // the lime highlight on dirt singletrack; every other activity (hiking, MTB,
+  // etc.) renders the same trail as a normal solid colored line. When the
+  // highlight is off, moto singletrack falls through to the default style
+  // below, so it blends in as a solid moto-colored line like moto roads.
+  if (highlightSingletrack && activity === 'dirt_bike' && isTrail && surface === 'dirt') {
     return { color: '#a3e635', weight: 2.5, opacity: 0, dotted: true };
   }
   // Moto doubletrack/road = solid lighter red
@@ -104,6 +107,21 @@ function getTrailStyle(activity, props) {
 
 function isSingletrack(props) {
   return props.type === 'Trail' && (props.surface || '').toLowerCase() === 'dirt';
+}
+
+// Build the polyline `icons` array for a given style. Returns [] (no symbols)
+// for plain lines so it also works to CLEAR icons via setOptions when a trail
+// switches from highlighted (dotted) to blended-in (solid).
+function buildDashedIcon(style) {
+  if (style.dotted) return [{
+    icon: { path: 'M 0,-1.5 0,1.5', strokeColor: style.color, strokeOpacity: 1, strokeWeight: 4, fillOpacity: 0, scale: 2 },
+    offset: '0', repeat: '5px',
+  }];
+  if (style.dashed) return [{
+    icon: { path: 'M 0,-1 0,1', strokeOpacity: 0.9, scale: 3 },
+    offset: '0', repeat: '12px',
+  }];
+  return [];
 }
 
 async function fetchTrailsInBounds(bounds) {
@@ -124,11 +142,11 @@ async function fetchTrailsInBounds(bounds) {
   return { features: data.features || [], exceeded: data.properties?.exceededTransferLimit === true };
 }
 
-function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode, onAddToRoute, onRemoveFromRoute, routeTrails }) {
+function TrailLayer({ activeFilters, highlightSingletrack, onStatusChange, routeMode, onAddToRoute, onRemoveFromRoute, routeTrails }) {
   const map = useMap();
   const polylinesRef = useRef({});
   const activeFiltersRef = useRef(activeFilters);
-  const singletrackOnlyRef = useRef(singletrackOnly);
+  const highlightSingletrackRef = useRef(highlightSingletrack);
   const debounceRef = useRef(null);
   const activeInfoWindowRef = useRef(null);
   const activePolylinesRef = useRef([]);
@@ -160,20 +178,43 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode,
 
   useEffect(() => {
     activeFiltersRef.current = activeFilters;
-    singletrackOnlyRef.current = singletrackOnly;
+    highlightSingletrackRef.current = highlightSingletrack;
   });
 
+  // Visibility now depends only on the activity filters — the singletrack
+  // toggle no longer hides anything, it only restyles (see effect below).
   useEffect(() => {
     if (!map) return;
     ACTIVITY_KEYS.forEach(activity => {
       const visible = !!activeFilters[activity];
       (polylinesRef.current[activity] || []).forEach(p => {
-        const show = visible && (activity !== 'dirt_bike' || !singletrackOnly || p.__singletrack);
-        p.setMap(show ? map : null);
+        p.setMap(visible ? map : null);
       });
     });
     refreshLabels();
-  }, [activeFilters, singletrackOnly, map, refreshLabels]);
+  }, [activeFilters, map, refreshLabels]);
+
+  // Re-style existing moto singletrack polylines when the highlight toggle
+  // flips. On (lime dotted) <-> off (solid moto-colored line). Keep the
+  // __orig* / __color metadata in sync so the click/route reset logic restores
+  // the correct current style.
+  useEffect(() => {
+    if (!map) return;
+    (polylinesRef.current['dirt_bike'] || []).forEach(p => {
+      if (!p.__singletrack) return;
+      const style = getTrailStyle('dirt_bike', p.__properties, highlightSingletrack);
+      if (!style) return;
+      p.setOptions({
+        strokeColor: style.color,
+        strokeOpacity: style.opacity,
+        strokeWeight: style.weight,
+        icons: buildDashedIcon(style),
+      });
+      p.__origWeight = style.weight;
+      p.__origOpacity = style.opacity;
+      p.__color = style.color;
+    });
+  }, [highlightSingletrack, map]);
 
   // Close info window when clicking on map
   useEffect(() => {
@@ -256,20 +297,14 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode,
         }
 
         activities.forEach(activity => {
-          const style = getTrailStyle(activity, properties);
+          const style = getTrailStyle(activity, properties, highlightSingletrackRef.current);
           if (!style) return;
           const visible = !!activeFiltersRef.current[activity];
 
-          const dashedIcon = style.dotted ? [{
-            icon: { path: 'M 0,-1.5 0,1.5', strokeColor: style.color, strokeOpacity: 1, strokeWeight: 4, fillOpacity: 0, scale: 2 },
-            offset: '0', repeat: '5px',
-          }] : style.dashed ? [{
-            icon: { path: 'M 0,-1 0,1', strokeOpacity: 0.9, scale: 3 },
-            offset: '0', repeat: '12px',
-          }] : undefined;
+          const dashedIcon = buildDashedIcon(style);
 
           coordSets.forEach(coords => {
-            const showPolyline = visible && (activity !== 'dirt_bike' || !singletrackOnlyRef.current || singletrack);
+            const showPolyline = visible;
             const polyline = new google.maps.Polyline({
               path: coords.map(([lng, lat]) => ({ lat, lng })),
               strokeColor: style.color,
@@ -508,7 +543,7 @@ function TrailLayer({ activeFilters, singletrackOnly, onStatusChange, routeMode,
   return null;
 }
 
-export default function TrailMap({ activeFilters, singletrackOnly, onMapReady, routeMode, onAddToRoute, onRemoveFromRoute, routeTrails }) {
+export default function TrailMap({ activeFilters, highlightSingletrack, onMapReady, routeMode, onAddToRoute, onRemoveFromRoute, routeTrails }) {
   const [status, setStatus] = useState({ type: 'idle' });
   return (
     <div className="map-wrapper">
@@ -524,7 +559,7 @@ export default function TrailMap({ activeFilters, singletrackOnly, onMapReady, r
         zoomControl={true}
       >
         {onMapReady && <MapController onMapReady={onMapReady} />}
-        <TrailLayer activeFilters={activeFilters} singletrackOnly={singletrackOnly} onStatusChange={setStatus} routeMode={routeMode} onAddToRoute={onAddToRoute} onRemoveFromRoute={onRemoveFromRoute} routeTrails={routeTrails} />
+        <TrailLayer activeFilters={activeFilters} highlightSingletrack={highlightSingletrack} onStatusChange={setStatus} routeMode={routeMode} onAddToRoute={onAddToRoute} onRemoveFromRoute={onRemoveFromRoute} routeTrails={routeTrails} />
       </GoogleMap>
       <div className="map-status">
         {status.type === 'loading' && <div className="status-badge loading"><span className="spinner" /> Loading trails...</div>}

@@ -114,7 +114,7 @@ function WelcomeModal({ onSelect, onCamp, onShops }) {
 export default function App() {
   const [activeFilters, setActiveFilters] = useState(() => makeFilters(startActivity));
   const [modalVisible, setModalVisible] = useState(showModal);
-  const [singletrackOnly, setSingletrackOnly] = useState(false);
+  const [highlightSingletrack, setHighlightSingletrack] = useState(true);
   const [campActive, setCampActive] = useState(false);
   const [shopsActive, setShopsActive] = useState(false);
   const [routeMode, setRouteMode] = useState(false);
@@ -147,7 +147,7 @@ export default function App() {
     setModalVisible(false);
   }
 
-  const handleToggleSingletrack = useCallback(() => setSingletrackOnly(v => !v), []);
+  const handleToggleSingletrack = useCallback(() => setHighlightSingletrack(v => !v), []);
 
   const handleMapReady = useCallback((map) => {
     mapRef.current = map;
@@ -203,7 +203,7 @@ export default function App() {
           <FloatingControls
             activeFilters={activeFilters}
             onToggle={toggleFilter}
-            singletrackOnly={singletrackOnly}
+            highlightSingletrack={highlightSingletrack}
             onToggleSingletrack={handleToggleSingletrack}
             mapRef={mapRef}
             externalCampActive={campActive}
@@ -214,7 +214,7 @@ export default function App() {
             routeTrails={routeTrails}
             onRouteTrailsChange={setRouteTrails}
           />
-          <TrailMap activeFilters={activeFilters} singletrackOnly={singletrackOnly} onMapReady={handleMapReady} routeMode={routeMode} onAddToRoute={handleAddToRoute} onRemoveFromRoute={handleRemoveFromRoute} routeTrails={routeTrails} />
+          <TrailMap activeFilters={activeFilters} highlightSingletrack={highlightSingletrack} onMapReady={handleMapReady} routeMode={routeMode} onAddToRoute={handleAddToRoute} onRemoveFromRoute={handleRemoveFromRoute} routeTrails={routeTrails} />
           <WeatherWidget mapRef={mapRef} />
         </main>
       </div>
