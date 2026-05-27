@@ -21,6 +21,17 @@ html, body, #root {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Block browser-level pinch-zoom of the PAGE while still allowing pan. The
+   Google Map handles its own pinch-zoom via JS, so this doesn't affect map
+   zoom (we don't set touch-action on the map container). */
+html, body {
+  touch-action: pan-x pan-y;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* iOS Safari zooms the page when focusing an input whose font-size < 16px. */
+input, textarea, select { font-size: 16px; }
+
 .app { display: flex; flex-direction: column; height: 100%; }
 
 /* ── Header ─────────────────────────────────────────────────── */
@@ -34,6 +45,9 @@ html, body, #root {
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   z-index: 10;
+  /* Only tap/pan on the header — no pinch-zoom of the page (Safari ignores
+     user-scalable=no, so we block it at the touch-action level). */
+  touch-action: manipulation;
 }
 
 .header-brand { display: flex; align-items: center; gap: 10px; }
@@ -93,7 +107,7 @@ html, body, #root {
   border: none;
   outline: none;
   color: var(--text-pri);
-  font-size: 13px;
+  font-size: 16px; /* >=16px so iOS Safari doesn't zoom the page on focus */
   width: 100%;
   font-family: inherit;
 }
@@ -154,6 +168,7 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  touch-action: manipulation;
 }
 
 .fc-btn {
@@ -486,8 +501,8 @@ html, body, #root {
   .welcome-grid { grid-template-columns: repeat(2, 1fr); }
   .welcome-modal { padding: 28px 16px 20px; }
   .search-bar { max-width: 220px; }
-  .search-input { font-size: 13px; }
-  .search-input::placeholder { font-size: 12px; }
+  .search-input { font-size: 16px; } /* keep >=16px on mobile to avoid focus-zoom */
+  .search-input::placeholder { font-size: 13px; }
 }
 
 /* Filter button active badge (mobile) */
