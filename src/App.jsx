@@ -1,9 +1,11 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { APIProvider } from '@vis.gl/react-google-maps';
 import TrailMap from './components/TrailMap';
 import FloatingControls from './components/FloatingControls';
 import SearchBar from './components/SearchBar';
 import WeatherWidget from './components/WeatherWidget';
+import AuthModal from './components/AuthModal';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ACTIVITY_KEYS, ACTIVITY_CONFIG } from './config';
 import './App.css';
 
@@ -111,6 +113,64 @@ function WelcomeModal({ onSelect, onCamp, onShops }) {
   );
 }
 
+// Header auth control: "Sign In" button when logged out, an avatar initial
+// with a dropdown (username + Sign Out) when logged in. Self-contained — owns
+// the AuthModal open state and the dropdown state. Must render inside
+// <AuthProvider> (it does — it lives in the header below).
+function HeaderAuth() {
+  const { user, signOut, loading } = useAuth();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Close the dropdown on any outside click.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onClick = () => setMenuOpen(false);
+    document.addEventListener('click', onClick);
+    return () => document.removeEventListener('click', onClick);
+  }, [menuOpen]);
+
+  if (loading) return <div className="header-auth-placeholder" aria-hidden="true" />;
+
+  if (!user) {
+    return (
+      <>
+        <button className="header-auth-btn" onClick={() => setModalOpen(true)}>Sign In</button>
+        <AuthModal open={modalOpen} onClose={() => setModalOpen(false)} />
+      </>
+    );
+  }
+
+  const email = user.email || '';
+  // profiles.username isn't fetched yet (tomorrow) — derive a display name from
+  // the email local-part, matching how the DB trigger seeds the username.
+  const username = user.user_metadata?.username || email.split('@')[0] || 'rider';
+  const initial = (username[0] || '?').toUpperCase();
+
+  return (
+    <div className="header-auth">
+      <button
+        className="header-avatar"
+        onClick={(e) => { e.stopPropagation(); setMenuOpen((o) => !o); }}
+        aria-label="Account menu"
+        aria-expanded={menuOpen}
+      >{initial}</button>
+      {menuOpen && (
+        <div className="header-menu" onClick={(e) => e.stopPropagation()}>
+          <div className="header-menu-user">
+            <div className="header-menu-username">{username}</div>
+            <div className="header-menu-email">{email}</div>
+          </div>
+          <button
+            className="header-menu-item"
+            onClick={async () => { setMenuOpen(false); await signOut(); }}
+          >Sign Out</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function App() {
   const [activeFilters, setActiveFilters] = useState(() => makeFilters(startActivity));
   const [modalVisible, setModalVisible] = useState(showModal);
@@ -188,6 +248,7 @@ export default function App() {
   }
 
   return (
+    <AuthProvider>
     <APIProvider apiKey={apiKey}>
       {modalVisible && <WelcomeModal onSelect={handleModalSelect} onCamp={setCampActive} onShops={setShopsActive} />}
       <div className="app">
@@ -197,7 +258,10 @@ export default function App() {
             <span className="brand-name">RadCamp Adventures</span>
           </div>
           <SearchBar onPlaceSelect={handlePlaceSelect} />
-          <span className="header-tagline">✨ AI-Powered Colorado Trail Explorer</span>
+          <div className="header-right">
+            <span className="header-tagline">✨ AI-Powered Colorado Trail Explorer</span>
+            <HeaderAuth />
+          </div>
         </header>
 
         <main className="app-main">
@@ -225,5 +289,6 @@ export default function App() {
         </main>
       </div>
     </APIProvider>
+    </AuthProvider>
   );
 }
