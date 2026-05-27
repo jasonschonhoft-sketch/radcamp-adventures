@@ -347,9 +347,9 @@ input, textarea, select { font-size: 16px; }
   position: absolute;
   top: 52px;
   right: 12px;
-  /* Passive info — sits low so interactive overlays (e.g. the account
-     dropdown) always render above it. */
-  z-index: 10;
+  /* Passive info — sits at the very bottom of the overlay stack. (Kept
+     pointer-events:none below so map drag/click passes through it.) */
+  z-index: 1;
   background: rgba(10,11,15,0.92);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 10px;
@@ -811,30 +811,23 @@ input, textarea, select { font-size: 16px; }
 }
 .header-avatar:hover { background: rgba(163,230,53,0.25); }
 
+/* Portaled into document.body, so it's positioned relative to the viewport
+   (fixed) at the top-right, just under the 52px header — right where the
+   avatar is. Being in body escapes the header's stacking context entirely. */
 .header-menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  /* Anchor the menu's right edge to the avatar's right edge so it extends
-     leftward into the viewport — the avatar sits near the right screen edge,
-     especially on mobile. */
-  right: 0;
-  left: auto;
+  position: fixed;
+  top: 60px;
+  right: 12px;
   min-width: 180px;
-  /* Never wider than the viewport (minus a small gutter) so it can't run off
-     the right/left edge on narrow phones. */
   max-width: calc(100vw - 24px);
-  /* Near-opaque solid background so it layers cleanly over the weather widget
-     if they overlap (don't rely on backdrop-filter, which stacks oddly on iOS). */
+  /* Near-opaque solid background so it reads cleanly over anything behind it. */
   background: rgba(15,17,21,0.98);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 10px;
   box-shadow: 0 8px 28px rgba(0,0,0,0.5);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   padding: 6px;
-  /* Always on top — above the weather widget and every other overlay
-     (incl. the mobile sidebar at 10000). Global, not media-query scoped. */
-  z-index: 99999;
+  /* Above every other overlay (mobile sidebar tops out at 10000). */
+  z-index: 999999;
 }
 .header-menu-user { padding: 8px 10px 10px; border-bottom: 1px solid rgba(255,255,255,0.07); margin-bottom: 4px; }
 .header-menu-username { font-size: 13px; font-weight: 700; color: #e8edf5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

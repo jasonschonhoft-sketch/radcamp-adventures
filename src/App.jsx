@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { APIProvider } from '@vis.gl/react-google-maps';
 import TrailMap from './components/TrailMap';
 import FloatingControls from './components/FloatingControls';
@@ -121,13 +122,28 @@ function HeaderAuth() {
   const { user, signOut, loading } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const avatarRef = useRef(null);
+  const menuRef = useRef(null);
 
-  // Close the dropdown on any outside click.
+  // Close the dropdown on a click/touch outside both the avatar and the
+  // (portaled) menu, or on Escape. Ref-based containment checks so it works
+  // even though the menu is rendered into document.body via a portal.
   useEffect(() => {
     if (!menuOpen) return;
-    const onClick = () => setMenuOpen(false);
-    document.addEventListener('click', onClick);
-    return () => document.removeEventListener('click', onClick);
+    const onPointerDown = (e) => {
+      if (avatarRef.current?.contains(e.target)) return;
+      if (menuRef.current?.contains(e.target)) return;
+      setMenuOpen(false);
+    };
+    const onKey = (e) => { if (e.key === 'Escape') setMenuOpen(false); };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('touchstart', onPointerDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('touchstart', onPointerDown);
+      document.removeEventListener('keydown', onKey);
+    };
   }, [menuOpen]);
 
   if (loading) return <div className="header-auth-placeholder" aria-hidden="true" />;
@@ -150,13 +166,17 @@ function HeaderAuth() {
   return (
     <div className="header-auth">
       <button
+        ref={avatarRef}
         className="header-avatar"
-        onClick={(e) => { e.stopPropagation(); setMenuOpen((o) => !o); }}
+        onClick={() => setMenuOpen((o) => !o)}
         aria-label="Account menu"
         aria-expanded={menuOpen}
       >{initial}</button>
-      {menuOpen && (
-        <div className="header-menu" onClick={(e) => e.stopPropagation()}>
+      {/* Portaled into document.body so the menu escapes the header's stacking
+          context (.app-header is a flex item with z-index, which traps any
+          child z-index). This is what guarantees it sits above the map UI. */}
+      {menuOpen && createPortal(
+        <div className="header-menu" ref={menuRef} role="menu">
           <div className="header-menu-user">
             <div className="header-menu-username">{username}</div>
             <div className="header-menu-email">{email}</div>
@@ -165,7 +185,8 @@ function HeaderAuth() {
             className="header-menu-item"
             onClick={async () => { setMenuOpen(false); await signOut(); }}
           >Sign Out</button>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
