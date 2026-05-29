@@ -96,6 +96,7 @@ function SidebarContent({
   routeMode, onToggleRoute, routeTrails,
   onClearRoute, onRemoveTrail, onOpenInMaps, onShareRoute,
   user, onLogRide, onViewRides, onSignIn,
+  showRideHistory, onToggleRideHistory,
 }) {
   const allOn = DISPLAY_KEYS.every(k => activeFilters[k]);
 
@@ -126,6 +127,21 @@ function SidebarContent({
           <div className="fc-rides">
             <button className="fc-ride-log" onClick={onLogRide}>Log a Ride</button>
             <button className="fc-ride-view" onClick={onViewRides}>View My Rides</button>
+            <button
+              className={`fc-item fc-ride-history${showRideHistory ? ' active' : ''}`}
+              style={{ '--dot': '#06b6d4' }}
+              onClick={onToggleRideHistory}
+              role="switch"
+              aria-checked={!!showRideHistory}
+            >
+              <span className="fc-dot" />
+              <span className="fc-label">Show ride history on map</span>
+              {showRideHistory && (
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" className="fc-check">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              )}
+            </button>
           </div>
         ) : (
           <button className="fc-ride-signin" onClick={onSignIn}>Sign in to track rides</button>
@@ -226,7 +242,7 @@ function SidebarContent({
   );
 }
 
-export default function FloatingControls({ activeFilters, onToggle, findSingletrack, onToggleSingletrack, onShowAllTrails, mapRef, externalCampActive, onCampChange, externalShopsActive, onShopsChange, onRouteModeChange, routeTrails: externalRouteTrails, onRouteTrailsChange, onLogRide, onViewRides, onSignIn }) {
+export default function FloatingControls({ activeFilters, onToggle, findSingletrack, onToggleSingletrack, onShowAllTrails, mapRef, externalCampActive, onCampChange, externalShopsActive, onShopsChange, onRouteModeChange, routeTrails: externalRouteTrails, onRouteTrailsChange, onLogRide, onViewRides, onSignIn, showRideHistory, onToggleRideHistory }) {
   const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [locating, setLocating] = useState(false);
@@ -453,6 +469,7 @@ export default function FloatingControls({ activeFilters, onToggle, findSingletr
     onLogRide: () => { setMobileOpen(false); onLogRide?.(); },
     onViewRides: () => { setMobileOpen(false); onViewRides?.(); },
     onSignIn: () => { setMobileOpen(false); onSignIn?.(); },
+    showRideHistory, onToggleRideHistory,
   };
 
   return (

@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Map as GoogleMap, useMap } from '@vis.gl/react-google-maps';
 import { ACTIVITY_CONFIG, ACTIVITY_KEYS, COTREX_URL, PAVED_SURFACES } from '../config';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
+import { RIDE_PIN_COLORS, formatRideDate } from '../lib/rides';
 
 const MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
@@ -523,7 +526,111 @@ function TrailLayer({ activeFilters, findSingletrack, onStatusChange, routeMode,
   return null;
 }
 
-export default function TrailMap({ activeFilters, findSingletrack, onMapReady, routeMode, onAddToRoute, onRemoveFromRoute, routeTrails }) {
+// Minimal HTML escaping for text injected into the ride-history popup markup.
+function escapeHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// A small ride-history marker: a ~10px filled circle with a white border and a
+// soft drop shadow so it reads clearly over satellite imagery. Built as an
+// inline SVG (rasterized by the browser) so we get a real shadow — unlike the
+// flat google.maps.SymbolPath.CIRCLE — without needing AdvancedMarker/mapId.
+function ridePinIcon(color) {
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22">` +
+    `<defs><filter id="rp" x="-50%" y="-50%" width="200%" height="200%">` +
+    `<feDropShadow dx="0" dy="0.6" stdDeviation="1.2" flood-color="#000" flood-opacity="0.55"/>` +
+    `</filter></defs>` +
+    `<circle cx="11" cy="11" r="5" fill="${color}" stroke="#ffffff" stroke-width="1.5" filter="url(#rp)"/>` +
+    `</svg>`;
+  return {
+    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+    scaledSize: new google.maps.Size(22, 22),
+    anchor: new google.maps.Point(11, 11),
+  };
+}
+
+// Dark popup for a ride-history pin (matches the campground/shop popups).
+function ridePopupContent(ride, pin, color) {
+  const label = pin?.label ? escapeHtml(pin.label) : '';
+  const fromPhoto = pin?.source === 'photo_exif';
+  return `<div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;padding:10px 12px;min-width:150px;max-width:230px">
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:2px">
+      <span style="width:9px;height:9px;border-radius:50%;background:${color};border:1.5px solid #fff;display:inline-block;flex-shrink:0"></span>
+      <span style="font-size:13px;font-weight:700;color:#e8edf5;line-height:1.3">${escapeHtml(ride.title || 'Ride')}</span>
+    </div>
+    <div style="font-size:11px;color:#8a9bb0">${escapeHtml(formatRideDate(ride.ride_date))}</div>
+    ${label ? `<div style="font-size:11px;color:#c7d0dd;margin-top:3px">${label}</div>` : ''}
+    ${fromPhoto ? `<div style="font-size:10px;color:#84cc16;font-weight:600;margin-top:3px">📷 Pin from photo</div>` : ''}
+  </div>`;
+}
+
+// Layers the signed-in user's logged-ride pins onto the main map, color-coded
+// per ride. Markers are managed imperatively (matching the trail/camp layers).
+// Refetches whenever the user, the enabled toggle, or refreshKey changes.
+function RideHistoryLayer({ enabled, refreshKey }) {
+  const map = useMap();
+  const { user } = useAuth();
+  const markersRef = useRef([]);
+  const infoWindowRef = useRef(null);
+  const reqIdRef = useRef(0);
+
+  function clearMarkers() {
+    markersRef.current.forEach(m => m.setMap(null));
+    markersRef.current = [];
+    if (infoWindowRef.current) infoWindowRef.current.close();
+  }
+
+  useEffect(() => {
+    if (!map) return;
+    // Invalidate any in-flight fetch, then clear when off / logged out.
+    const myReq = ++reqIdRef.current;
+    if (!enabled || !user || !supabase) { clearMarkers(); return; }
+
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('rides')
+          .select('id,title,ride_date,pins')
+          .eq('user_id', user.id)
+          .order('ride_date', { ascending: false });
+        if (error) throw error;
+        // Ignore stale responses (toggled off, signed out, or a newer fetch).
+        if (myReq !== reqIdRef.current) return;
+
+        clearMarkers();
+        if (!infoWindowRef.current) infoWindowRef.current = new google.maps.InfoWindow();
+
+        (data || []).forEach((ride, rideIdx) => {
+          const color = RIDE_PIN_COLORS[rideIdx % RIDE_PIN_COLORS.length];
+          const icon = ridePinIcon(color);
+          (Array.isArray(ride.pins) ? ride.pins : []).forEach(pin => {
+            if (!Number.isFinite(pin?.lat) || !Number.isFinite(pin?.lng)) return;
+            const marker = new google.maps.Marker({
+              position: { lat: pin.lat, lng: pin.lng },
+              map, icon, title: ride.title || 'Ride', zIndex: 50,
+            });
+            marker.addListener('click', () => {
+              infoWindowRef.current.setContent(ridePopupContent(ride, pin, color));
+              infoWindowRef.current.open(map, marker);
+            });
+            markersRef.current.push(marker);
+          });
+        });
+      } catch (err) {
+        console.error('[RideHistory] load failed:', err);
+      }
+    })();
+  }, [map, enabled, user, refreshKey]);
+
+  // Remove markers on unmount.
+  useEffect(() => () => clearMarkers(), []);
+
+  return null;
+}
+
+export default function TrailMap({ activeFilters, findSingletrack, onMapReady, routeMode, onAddToRoute, onRemoveFromRoute, routeTrails, showRideHistory, ridesRefresh }) {
   const [status, setStatus] = useState({ type: 'idle' });
   return (
     <div className="map-wrapper">
@@ -540,6 +647,7 @@ export default function TrailMap({ activeFilters, findSingletrack, onMapReady, r
       >
         {onMapReady && <MapController onMapReady={onMapReady} />}
         <TrailLayer activeFilters={activeFilters} findSingletrack={findSingletrack} onStatusChange={setStatus} routeMode={routeMode} onAddToRoute={onAddToRoute} onRemoveFromRoute={onRemoveFromRoute} routeTrails={routeTrails} />
+        <RideHistoryLayer enabled={!!showRideHistory} refreshKey={ridesRefresh} />
       </GoogleMap>
       <div className="map-status">
         {status.type === 'loading' && <div className="status-badge loading"><span className="spinner" /> Loading trails...</div>}

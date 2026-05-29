@@ -208,6 +208,7 @@ export default function App() {
   const [editRide, setEditRide] = useState(null);
   const [ridesRefresh, setRidesRefresh] = useState(0);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [showRideHistory, setShowRideHistory] = useState(true); // ride pins on main map (ON by default)
 
   const handleAddToRoute = useCallback((trail) => {
     setRouteTrails(prev => {
@@ -311,8 +312,10 @@ export default function App() {
             onLogRide={() => { setEditRide(null); setLogRideOpen(true); }}
             onViewRides={() => setRidesPanelOpen(true)}
             onSignIn={() => setAuthModalOpen(true)}
+            showRideHistory={showRideHistory}
+            onToggleRideHistory={() => setShowRideHistory(v => !v)}
           />
-          <TrailMap activeFilters={activeFilters} findSingletrack={findSingletrack} onMapReady={handleMapReady} routeMode={routeMode} onAddToRoute={handleAddToRoute} onRemoveFromRoute={handleRemoveFromRoute} routeTrails={routeTrails} />
+          <TrailMap activeFilters={activeFilters} findSingletrack={findSingletrack} onMapReady={handleMapReady} routeMode={routeMode} onAddToRoute={handleAddToRoute} onRemoveFromRoute={handleRemoveFromRoute} routeTrails={routeTrails} showRideHistory={showRideHistory} ridesRefresh={ridesRefresh} />
           <WeatherWidget mapRef={mapRef} />
           <div className={`singletrack-banner${findSingletrack ? ' visible' : ''}`} role="status" aria-hidden={!findSingletrack}>
             <span className="singletrack-banner-text">🔍 Showing singletrack only</span>
