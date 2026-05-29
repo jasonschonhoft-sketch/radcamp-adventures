@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useMapsLibrary } from '@vis.gl/react-google-maps';
 import { ACTIVITY_CONFIG } from '../config';
+import { useAuth } from '../contexts/AuthContext';
 
 const DISPLAY_KEYS = [
   'dirt_bike', 'ohv',
@@ -94,6 +95,7 @@ function SidebarContent({
   shopsActive, onToggleShops,
   routeMode, onToggleRoute, routeTrails,
   onClearRoute, onRemoveTrail, onOpenInMaps, onShareRoute,
+  user, onLogRide, onViewRides, onSignIn,
 }) {
   const allOn = DISPLAY_KEYS.every(k => activeFilters[k]);
 
@@ -118,6 +120,18 @@ function SidebarContent({
         <button className="fc-toggle-all" onClick={toggleAll}>{allOn ? 'Hide All' : 'Show All'}</button>
       </div>
       <div className="fc-list">
+        {/* My Rides */}
+        <div className="fc-section">MY RIDES</div>
+        {user ? (
+          <div className="fc-rides">
+            <button className="fc-ride-log" onClick={onLogRide}>Log a Ride</button>
+            <button className="fc-ride-view" onClick={onViewRides}>View My Rides</button>
+          </div>
+        ) : (
+          <button className="fc-ride-signin" onClick={onSignIn}>Sign in to track rides</button>
+        )}
+
+        <div className="fc-section">TRAIL TYPES</div>
         {DISPLAY_KEYS.map(key => {
           const cfg = ACTIVITY_CONFIG[key];
           if (!cfg) return null;
@@ -212,7 +226,8 @@ function SidebarContent({
   );
 }
 
-export default function FloatingControls({ activeFilters, onToggle, findSingletrack, onToggleSingletrack, onShowAllTrails, mapRef, externalCampActive, onCampChange, externalShopsActive, onShopsChange, onRouteModeChange, routeTrails: externalRouteTrails, onRouteTrailsChange }) {
+export default function FloatingControls({ activeFilters, onToggle, findSingletrack, onToggleSingletrack, onShowAllTrails, mapRef, externalCampActive, onCampChange, externalShopsActive, onShopsChange, onRouteModeChange, routeTrails: externalRouteTrails, onRouteTrailsChange, onLogRide, onViewRides, onSignIn }) {
+  const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [locating, setLocating] = useState(false);
   const [shopsActive, setShopsActive] = useState(false);
@@ -434,6 +449,10 @@ export default function FloatingControls({ activeFilters, onToggle, findSingletr
     onRemoveTrail: handleRemoveTrail,
     onOpenInMaps: handleOpenInMaps,
     onShareRoute: handleShareRoute,
+    user,
+    onLogRide: () => { setMobileOpen(false); onLogRide?.(); },
+    onViewRides: () => { setMobileOpen(false); onViewRides?.(); },
+    onSignIn: () => { setMobileOpen(false); onSignIn?.(); },
   };
 
   return (

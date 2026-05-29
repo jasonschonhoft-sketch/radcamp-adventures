@@ -981,3 +981,214 @@ input, textarea, select { font-size: 16px; }
 @media (max-width: 768px) {
   .header-right { gap: 10px; }
 }
+
+/* ============================================================================
+   Ride logging — FloatingControls "MY RIDES" section
+   ============================================================================ */
+.fc-rides { display: flex; flex-direction: column; gap: 6px; padding: 0 2px 4px; }
+.fc-ride-log {
+  background: #a3e635; color: #0f1117; border: none; border-radius: 8px;
+  padding: 9px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+  transition: background 0.15s;
+}
+.fc-ride-log:hover { background: #b9f04a; }
+.fc-ride-view {
+  background: none; color: #c7d0dd; border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 8px; padding: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+  font-family: inherit; transition: background 0.15s, border-color 0.15s;
+}
+.fc-ride-view:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.3); }
+.fc-ride-signin {
+  background: none; border: none; color: #a3e635; font-size: 12px; font-weight: 600;
+  cursor: pointer; font-family: inherit; text-decoration: underline; text-underline-offset: 2px;
+  padding: 4px 2px; text-align: left;
+}
+
+/* ============================================================================
+   Log Ride modal
+   ============================================================================ */
+.ride-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.82); z-index: 1300;
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 24px 16px; overflow-y: auto; backdrop-filter: blur(4px);
+}
+.ride-modal {
+  position: relative; background: rgba(15,17,21,0.98);
+  border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
+  padding: 28px 24px 22px; max-width: 560px; width: 100%; margin: auto;
+}
+.ride-modal-title { font-size: 19px; font-weight: 700; color: #e8edf5; margin: 0 0 18px; }
+.ride-form { display: flex; flex-direction: column; gap: 14px; }
+.ride-row { display: flex; gap: 12px; }
+.ride-textarea { resize: vertical; min-height: 110px; line-height: 1.45; font-family: inherit; }
+
+.ride-pinmap, .ride-detail-map, .rides-map {
+  width: 100%; height: 300px; border-radius: 10px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.1); margin-top: 6px;
+}
+.rides-map { height: 100%; min-height: 320px; border-radius: 0; border: none; margin-top: 0; }
+
+.ride-pin-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.ride-pin-item { display: flex; align-items: center; gap: 8px; }
+.ride-pin-num {
+  flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(163,230,53,0.16); color: #a3e635; font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.ride-pin-label { flex: 1; padding: 7px 10px !important; font-size: 13px !important; }
+.ride-pin-remove {
+  flex-shrink: 0; width: 26px; height: 26px; border-radius: 6px; border: none;
+  background: rgba(239,68,68,0.14); color: #fca5a5; font-size: 18px; line-height: 1;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.ride-pin-remove:hover { background: rgba(239,68,68,0.26); }
+
+.ride-file { font-size: 12px; color: #c7d0dd; margin-top: 4px; }
+.ride-file::file-selector-button {
+  background: rgba(255,255,255,0.06); color: #e8edf5; border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 7px; padding: 7px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+  margin-right: 10px; font-family: inherit;
+}
+.ride-thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.ride-thumb { position: relative; width: 78px; height: 78px; border-radius: 8px; overflow: hidden; background: rgba(255,255,255,0.04); }
+.ride-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ride-thumb-loading { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+.ride-thumb-remove {
+  position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 50%;
+  border: none; background: rgba(0,0,0,0.7); color: #fff; font-size: 14px; line-height: 1;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+
+.ride-progress { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #a3e635; }
+
+.ride-actions { display: flex; gap: 10px; margin-top: 6px; }
+.ride-btn-cancel {
+  flex: 1; background: none; color: #c7d0dd; border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 9px; padding: 11px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+}
+.ride-btn-cancel:hover:not(:disabled) { background: rgba(255,255,255,0.06); }
+.ride-btn-save {
+  flex: 2; background: #a3e635; color: #0f1117; border: none; border-radius: 9px;
+  padding: 11px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;
+}
+.ride-btn-save:hover:not(:disabled) { background: #b9f04a; }
+.ride-btn-save:disabled, .ride-btn-cancel:disabled { opacity: 0.6; cursor: default; }
+.ride-btn-delete {
+  flex: 1; background: rgba(239,68,68,0.12); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4);
+  border-radius: 9px; padding: 11px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;
+}
+.ride-btn-delete:hover:not(:disabled) { background: rgba(239,68,68,0.22); }
+.ride-btn-delete:disabled { opacity: 0.6; cursor: default; }
+
+/* ============================================================================
+   My Rides panel
+   ============================================================================ */
+.rides-panel {
+  position: fixed; inset: 0; z-index: 1200; background: rgba(15,17,21,0.99);
+  display: flex; flex-direction: column;
+}
+.rides-panel-header {
+  position: relative; display: flex; align-items: center; gap: 16px;
+  padding: 18px 56px 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); flex-shrink: 0;
+}
+.rides-panel-close { top: 16px; right: 16px; }
+.rides-panel-title { font-size: 18px; font-weight: 700; color: #e8edf5; margin: 0; }
+.rides-toggle {
+  display: flex; gap: 4px; background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07); border-radius: 9px; padding: 3px; margin-left: auto;
+}
+.rides-toggle-btn {
+  background: none; border: none; color: #8a9bb0; font-size: 13px; font-weight: 600;
+  padding: 6px 16px; border-radius: 6px; cursor: pointer; font-family: inherit;
+}
+.rides-toggle-btn.active { background: rgba(163,230,53,0.14); color: #a3e635; }
+
+.rides-panel-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+.rides-empty {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  flex: 1; color: #8a9bb0; font-size: 14px; padding: 40px 20px; text-align: center;
+}
+.rides-error { color: #fca5a5; }
+
+.rides-list {
+  display: grid; grid-template-columns: 1fr; gap: 12px; padding: 18px 20px 40px;
+  max-width: 720px; width: 100%; margin: 0 auto;
+}
+.ride-card {
+  display: flex; gap: 14px; align-items: stretch; text-align: left;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px; padding: 12px; cursor: pointer; font-family: inherit;
+  transition: background 0.15s, border-color 0.15s;
+}
+.ride-card:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.16); }
+.ride-card-thumb {
+  width: 84px; height: 84px; flex-shrink: 0; border-radius: 9px; object-fit: cover;
+  background: rgba(255,255,255,0.05);
+}
+.ride-card-thumb-empty { display: flex; align-items: center; justify-content: center; font-size: 30px; }
+.ride-card-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ride-card-title { font-size: 15px; font-weight: 700; color: #e8edf5; }
+.ride-card-meta { font-size: 12px; color: #8a9bb0; }
+.ride-card-notes { font-size: 12px; color: #c7d0dd; line-height: 1.4; }
+
+.rides-iw { font-family: inherit; min-width: 150px; padding: 2px; }
+.rides-iw-title { font-size: 14px; font-weight: 700; color: #1a1f2e; margin-bottom: 2px; }
+.rides-iw-date { font-size: 12px; color: #555; }
+.rides-iw-label { font-size: 12px; color: #777; margin-top: 2px; }
+.rides-iw-btn {
+  margin-top: 8px; background: #65a30d; color: #fff; border: none; border-radius: 6px;
+  padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit;
+}
+
+/* ============================================================================
+   Ride detail
+   ============================================================================ */
+.ride-detail { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.ride-detail-head { padding: 12px 20px 0; }
+.ride-back {
+  display: inline-flex; align-items: center; gap: 4px; background: none; border: none;
+  color: #a3e635; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; padding: 4px 0;
+}
+.ride-detail-body { padding: 12px 20px 48px; max-width: 720px; width: 100%; margin: 0 auto; }
+.ride-detail-title { font-size: 22px; font-weight: 800; color: #e8edf5; margin: 0 0 6px; }
+.ride-detail-meta { font-size: 14px; color: #8a9bb0; margin-bottom: 16px; }
+.ride-detail-area { color: #c7d0dd; }
+.ride-detail-stats { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+.ride-stat {
+  flex: 1; min-width: 90px; background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px; text-align: center;
+}
+.ride-stat-value { font-size: 18px; font-weight: 800; color: #a3e635; }
+.ride-stat-label { font-size: 11px; color: #8a9bb0; margin-top: 2px; letter-spacing: 0.3px; }
+.ride-detail-notes { font-size: 15px; color: #d6deea; line-height: 1.6; white-space: pre-wrap; margin: 0 0 18px; }
+
+.ride-photo-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 18px;
+}
+.ride-photo-cell {
+  position: relative; aspect-ratio: 1; border: none; border-radius: 10px; overflow: hidden;
+  background: rgba(255,255,255,0.05); cursor: pointer; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.ride-photo-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.ride-detail-actions { display: flex; gap: 10px; margin-top: 8px; }
+
+.ride-lightbox {
+  position: fixed; inset: 0; z-index: 1400; background: rgba(0,0,0,0.92);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.ride-lightbox img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
+.ride-lightbox-close {
+  position: absolute; top: 16px; right: 18px; width: 40px; height: 40px; border-radius: 50%;
+  border: none; background: rgba(255,255,255,0.12); color: #fff; font-size: 26px; line-height: 1;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+
+@media (min-width: 768px) {
+  .ride-photo-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 480px) {
+  .ride-row { flex-direction: column; gap: 14px; }
+  .ride-modal { padding: 24px 16px 18px; border-radius: 14px; }
+}

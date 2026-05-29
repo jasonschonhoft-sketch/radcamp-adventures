@@ -6,6 +6,8 @@ import FloatingControls from './components/FloatingControls';
 import SearchBar from './components/SearchBar';
 import WeatherWidget from './components/WeatherWidget';
 import AuthModal from './components/AuthModal';
+import LogRideModal from './components/LogRideModal';
+import MyRidesPanel from './components/MyRidesPanel';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ACTIVITY_KEYS, ACTIVITY_CONFIG } from './config';
 import './App.css';
@@ -200,6 +202,12 @@ export default function App() {
   const [shopsActive, setShopsActive] = useState(false);
   const [routeMode, setRouteMode] = useState(false);
   const [routeTrails, setRouteTrails] = useState([]);
+  // Ride logging
+  const [logRideOpen, setLogRideOpen] = useState(false);
+  const [ridesPanelOpen, setRidesPanelOpen] = useState(false);
+  const [editRide, setEditRide] = useState(null);
+  const [ridesRefresh, setRidesRefresh] = useState(0);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const handleAddToRoute = useCallback((trail) => {
     setRouteTrails(prev => {
@@ -300,6 +308,9 @@ export default function App() {
             onRouteModeChange={setRouteMode}
             routeTrails={routeTrails}
             onRouteTrailsChange={setRouteTrails}
+            onLogRide={() => { setEditRide(null); setLogRideOpen(true); }}
+            onViewRides={() => setRidesPanelOpen(true)}
+            onSignIn={() => setAuthModalOpen(true)}
           />
           <TrailMap activeFilters={activeFilters} findSingletrack={findSingletrack} onMapReady={handleMapReady} routeMode={routeMode} onAddToRoute={handleAddToRoute} onRemoveFromRoute={handleRemoveFromRoute} routeTrails={routeTrails} />
           <WeatherWidget mapRef={mapRef} />
@@ -308,6 +319,21 @@ export default function App() {
             <button className="singletrack-banner-link" onClick={handleShowAllTrails}>Show all trails</button>
           </div>
         </main>
+
+        <LogRideModal
+          open={logRideOpen}
+          editRide={editRide}
+          mapRef={mapRef}
+          onClose={() => { setLogRideOpen(false); setEditRide(null); }}
+          onSaved={() => setRidesRefresh(n => n + 1)}
+        />
+        <MyRidesPanel
+          open={ridesPanelOpen}
+          refreshSignal={ridesRefresh}
+          onClose={() => setRidesPanelOpen(false)}
+          onEdit={(ride) => { setEditRide(ride); setLogRideOpen(true); }}
+        />
+        <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
       </div>
     </APIProvider>
     </AuthProvider>
