@@ -1206,3 +1206,43 @@ input, textarea, select { font-size: 16px; }
   .ride-row { flex-direction: column; gap: 14px; }
   .ride-modal { padding: 24px 16px 18px; border-radius: 14px; }
 }
+
+/* ============================================================================
+   Ride-history pins on the main map (custom HTML OverlayView)
+   ============================================================================ */
+/* Base: positioned by the overlay at the pin's pixel coords, centered on it. */
+.ride-map-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+/* Manual pins, and photo pins before/while their image loads (or on failure). */
+.ride-map-pin-dot {
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  background: var(--ride-color, #06b6d4);
+  border: 1.5px solid #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.55);
+}
+/* Photo pins: circular thumbnail, white border, color-coded ring + soft shadow. */
+.ride-map-pin-photo {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background-color: #1a1f2e;
+  background-size: cover;
+  background-position: center;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 2px var(--ride-color, #06b6d4), 0 2px 7px rgba(0,0,0,0.5);
+}
+
+/* Loading shimmer for the popup photo while its signed URL resolves. */
+.ride-popup-shimmer {
+  background: linear-gradient(100deg, rgba(255,255,255,0.05) 30%, rgba(255,255,255,0.14) 50%, rgba(255,255,255,0.05) 70%);
+  background-size: 200% 100%;
+  animation: ridePopupShimmer 1.2s ease-in-out infinite;
+}
+@keyframes ridePopupShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

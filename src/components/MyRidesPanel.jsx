@@ -66,7 +66,7 @@ function RidesMap({ rides, onViewRide }) {
   );
 }
 
-export default function MyRidesPanel({ open, onClose, onEdit, refreshSignal }) {
+export default function MyRidesPanel({ open, onClose, onEdit, refreshSignal, initialRideId }) {
   const [view, setView] = useState('list');
   const [rides, setRides] = useState([]);
   const [thumbs, setThumbs] = useState({}); // storage_path -> signed url
@@ -96,6 +96,11 @@ export default function MyRidesPanel({ open, onClose, onEdit, refreshSignal }) {
   }, []);
 
   useEffect(() => { if (open) load(); }, [open, refreshSignal, load]);
+
+  // When opened from a map pin, jump straight into that ride's detail view.
+  useEffect(() => {
+    if (open && initialRideId) setSelectedRideId(initialRideId);
+  }, [open, initialRideId]);
 
   useEffect(() => {
     if (!open) return;

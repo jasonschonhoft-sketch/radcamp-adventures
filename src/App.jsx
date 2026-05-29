@@ -209,6 +209,7 @@ export default function App() {
   const [ridesRefresh, setRidesRefresh] = useState(0);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [showRideHistory, setShowRideHistory] = useState(true); // ride pins on main map (ON by default)
+  const [focusRideId, setFocusRideId] = useState(null); // ride to open in detail (from a map pin)
 
   const handleAddToRoute = useCallback((trail) => {
     setRouteTrails(prev => {
@@ -315,7 +316,7 @@ export default function App() {
             showRideHistory={showRideHistory}
             onToggleRideHistory={() => setShowRideHistory(v => !v)}
           />
-          <TrailMap activeFilters={activeFilters} findSingletrack={findSingletrack} onMapReady={handleMapReady} routeMode={routeMode} onAddToRoute={handleAddToRoute} onRemoveFromRoute={handleRemoveFromRoute} routeTrails={routeTrails} showRideHistory={showRideHistory} ridesRefresh={ridesRefresh} />
+          <TrailMap activeFilters={activeFilters} findSingletrack={findSingletrack} onMapReady={handleMapReady} routeMode={routeMode} onAddToRoute={handleAddToRoute} onRemoveFromRoute={handleRemoveFromRoute} routeTrails={routeTrails} showRideHistory={showRideHistory} ridesRefresh={ridesRefresh} onViewRide={(id) => { setFocusRideId(id); setRidesPanelOpen(true); }} />
           <WeatherWidget mapRef={mapRef} />
           <div className={`singletrack-banner${findSingletrack ? ' visible' : ''}`} role="status" aria-hidden={!findSingletrack}>
             <span className="singletrack-banner-text">🔍 Showing singletrack only</span>
@@ -333,7 +334,8 @@ export default function App() {
         <MyRidesPanel
           open={ridesPanelOpen}
           refreshSignal={ridesRefresh}
-          onClose={() => setRidesPanelOpen(false)}
+          initialRideId={focusRideId}
+          onClose={() => { setRidesPanelOpen(false); setFocusRideId(null); }}
           onEdit={(ride) => { setEditRide(ride); setLogRideOpen(true); }}
         />
         <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />

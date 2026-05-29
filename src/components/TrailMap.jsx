@@ -3,7 +3,7 @@ import { Map as GoogleMap, useMap } from '@vis.gl/react-google-maps';
 import { ACTIVITY_CONFIG, ACTIVITY_KEYS, COTREX_URL, PAVED_SURFACES } from '../config';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { RIDE_PIN_COLORS, formatRideDate } from '../lib/rides';
+import { RIDE_PIN_COLORS, formatRideDate, signedUrlsFor, photoForPin, matchedPhotoForPin } from '../lib/rides';
 
 const MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
@@ -532,105 +532,226 @@ function escapeHtml(s) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-// A small ride-history marker: a ~10px filled circle with a white border and a
-// soft drop shadow so it reads clearly over satellite imagery. Built as an
-// inline SVG (rasterized by the browser) so we get a real shadow — unlike the
-// flat google.maps.SymbolPath.CIRCLE — without needing AdvancedMarker/mapId.
-function ridePinIcon(color) {
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22">` +
-    `<defs><filter id="rp" x="-50%" y="-50%" width="200%" height="200%">` +
-    `<feDropShadow dx="0" dy="0.6" stdDeviation="1.2" flood-color="#000" flood-opacity="0.55"/>` +
-    `</filter></defs>` +
-    `<circle cx="11" cy="11" r="5" fill="${color}" stroke="#ffffff" stroke-width="1.5" filter="url(#rp)"/>` +
-    `</svg>`;
-  return {
-    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
-    scaledSize: new google.maps.Size(22, 22),
-    anchor: new google.maps.Point(11, 11),
+// Session cache of Supabase signed URLs, keyed by storage_path, so panning the
+// map never refetches a photo we've already resolved this session.
+const ridePhotoUrlCache = new Map();
+
+// google.maps.OverlayView can only be subclassed once the Maps JS API is
+// loaded, so define the class lazily on first use (inside the layer effect).
+let PhotoPinOverlay = null;
+function getPhotoPinOverlayClass() {
+  if (PhotoPinOverlay) return PhotoPinOverlay;
+  PhotoPinOverlay = class extends google.maps.OverlayView {
+    constructor(position, element) {
+      super();
+      this._position = position;
+      this._element = element;
+    }
+    onAdd() {
+      // overlayMouseTarget receives pointer events (so the pin is clickable).
+      this.getPanes().overlayMouseTarget.appendChild(this._element);
+    }
+    draw() {
+      const proj = this.getProjection();
+      if (!proj) return;
+      const p = proj.fromLatLngToDivPixel(this._position);
+      if (p) {
+        this._element.style.left = `${p.x}px`;
+        this._element.style.top = `${p.y}px`;
+      }
+    }
+    onRemove() {
+      if (this._element.parentNode) this._element.parentNode.removeChild(this._element);
+    }
   };
+  return PhotoPinOverlay;
 }
 
-// Dark popup for a ride-history pin (matches the campground/shop popups).
-function ridePopupContent(ride, pin, color) {
+// Dark popup for a ride-history pin (matches the campground/shop popups). When
+// the ride has a photo, it's shown full-width at the top with rounded corners.
+// thumbUrl may be null while the signed URL resolves → shimmer placeholder.
+function ridePopupContent(ride, pin, color, { hasPhoto, thumbUrl }) {
   const label = pin?.label ? escapeHtml(pin.label) : '';
+  const area = ride.area_name ? escapeHtml(ride.area_name) : '';
   const fromPhoto = pin?.source === 'photo_exif';
-  return `<div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;padding:10px 12px;min-width:150px;max-width:230px">
-    <div style="display:flex;align-items:center;gap:7px;margin-bottom:2px">
-      <span style="width:9px;height:9px;border-radius:50%;background:${color};border:1.5px solid #fff;display:inline-block;flex-shrink:0"></span>
-      <span style="font-size:13px;font-weight:700;color:#e8edf5;line-height:1.3">${escapeHtml(ride.title || 'Ride')}</span>
-    </div>
-    <div style="font-size:11px;color:#8a9bb0">${escapeHtml(formatRideDate(ride.ride_date))}</div>
-    ${label ? `<div style="font-size:11px;color:#c7d0dd;margin-top:3px">${label}</div>` : ''}
-    ${fromPhoto ? `<div style="font-size:10px;color:#84cc16;font-weight:600;margin-top:3px">📷 Pin from photo</div>` : ''}
-  </div>`;
+  const thumb = !hasPhoto ? '' : (
+    `<div id="ride-pin-thumb" data-ride-action="view" style="position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;cursor:pointer;background:rgba(255,255,255,0.06);border-radius:10px 10px 0 0">` +
+      (thumbUrl
+        ? `<img src="${escapeHtml(thumbUrl)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block"/>`
+        : `<div class="ride-popup-shimmer" style="width:100%;height:100%"></div>`) +
+    `</div>`
+  );
+  return (
+    `<div id="ride-pin-popup" style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;width:200px;max-width:230px">` +
+      thumb +
+      `<div style="padding:10px 12px">` +
+        `<div style="display:flex;align-items:center;gap:7px;margin-bottom:2px">` +
+          `<span style="width:9px;height:9px;border-radius:50%;background:${color};border:1.5px solid #fff;display:inline-block;flex-shrink:0"></span>` +
+          `<span style="font-size:13px;font-weight:700;color:#e8edf5;line-height:1.3">${escapeHtml(ride.title || 'Ride')}</span>` +
+        `</div>` +
+        `<div style="font-size:11px;color:#8a9bb0">${escapeHtml(formatRideDate(ride.ride_date))}</div>` +
+        (area ? `<div style="font-size:11px;color:#c7d0dd;margin-top:2px">${area}</div>` : '') +
+        (label ? `<div style="font-size:11px;color:#c7d0dd;margin-top:3px">${label}</div>` : '') +
+        (fromPhoto ? `<div style="font-size:10px;color:#84cc16;font-weight:600;margin-top:3px">📷 Pin from photo</div>` : '') +
+        `<button data-ride-action="view" style="margin-top:9px;width:100%;background:#65a30d;color:#fff;border:none;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">View Ride</button>` +
+      `</div>` +
+    `</div>`
+  );
 }
 
-// Layers the signed-in user's logged-ride pins onto the main map, color-coded
-// per ride. Markers are managed imperatively (matching the trail/camp layers).
-// Refetches whenever the user, the enabled toggle, or refreshKey changes.
-function RideHistoryLayer({ enabled, refreshKey }) {
+// Layers the signed-in user's logged-ride pins onto the main map. Pins that were
+// auto-extracted from a photo (source 'photo_exif') render as small circular
+// photo thumbnails (color-ringed per ride); manual pins — and photo pins whose
+// image fails to load — render as colored dots. Built on a custom HTML
+// OverlayView (no mapId needed, so classic markers/controls stay intact).
+function RideHistoryLayer({ enabled, refreshKey, onViewRide }) {
   const map = useMap();
   const { user } = useAuth();
-  const markersRef = useRef([]);
+  const entriesRef = useRef([]);          // { ride, pin, color, mapPhoto, popupPhoto, position, el, overlay, state }
   const infoWindowRef = useRef(null);
+  const idleListenerRef = useRef(null);
   const reqIdRef = useRef(0);
+  const onViewRideRef = useRef(onViewRide);
+  useEffect(() => { onViewRideRef.current = onViewRide; }, [onViewRide]);
 
-  function clearMarkers() {
-    markersRef.current.forEach(m => m.setMap(null));
-    markersRef.current = [];
+  function clearOverlays() {
+    entriesRef.current.forEach(e => { try { e.overlay.setMap(null); } catch { /* noop */ } });
+    entriesRef.current = [];
     if (infoWindowRef.current) infoWindowRef.current.close();
+    if (idleListenerRef.current) {
+      google.maps.event.removeListener(idleListenerRef.current);
+      idleListenerRef.current = null;
+    }
+  }
+
+  // Swap a dot pin to its circular photo once the image is confirmed loadable.
+  function applyPhoto(entry, url) {
+    const img = new Image();
+    img.onload = () => {
+      entry.state = 'photo';
+      entry.el.classList.remove('ride-map-pin-dot');
+      entry.el.classList.add('ride-map-pin-photo');
+      entry.el.style.backgroundImage = `url("${url}")`;
+    };
+    img.onerror = () => { entry.state = 'failed'; }; // stays a dot
+    img.src = url;
+  }
+
+  // Lazy-load thumbnails for photo pins currently in view (cached per session).
+  function loadVisibleThumbs() {
+    if (!map) return;
+    const bounds = map.getBounds();
+    if (!bounds) return;
+    const toFetch = [];
+    for (const entry of entriesRef.current) {
+      if (entry.state !== 'dot' || !entry.mapPhoto) continue;
+      if (!bounds.contains(entry.position)) continue;
+      const cached = ridePhotoUrlCache.get(entry.mapPhoto.storage_path);
+      if (cached) { applyPhoto(entry, cached); continue; }
+      entry.state = 'loading';
+      toFetch.push(entry);
+    }
+    if (!toFetch.length) return;
+    const paths = [...new Set(toFetch.map(e => e.mapPhoto.storage_path))];
+    signedUrlsFor(paths).then(urlMap => {
+      for (const entry of toFetch) {
+        const url = urlMap[entry.mapPhoto.storage_path];
+        if (url) { ridePhotoUrlCache.set(entry.mapPhoto.storage_path, url); applyPhoto(entry, url); }
+        else entry.state = 'failed';
+      }
+    }).catch(() => { toFetch.forEach(e => { e.state = 'dot'; }); });
+  }
+
+  // Open the dark info window for a pin, wiring up the photo + View Ride taps.
+  function openPopup(entry) {
+    const iw = infoWindowRef.current;
+    if (!iw) return;
+    const photo = entry.popupPhoto;
+    const cachedUrl = photo ? ridePhotoUrlCache.get(photo.storage_path) : null;
+    iw.setContent(ridePopupContent(entry.ride, entry.pin, entry.color, { hasPhoto: !!photo, thumbUrl: cachedUrl || null }));
+    iw.setPosition(entry.position);
+    iw.open(map);
+    google.maps.event.addListenerOnce(iw, 'domready', () => {
+      const root = document.getElementById('ride-pin-popup');
+      if (!root) return;
+      root.querySelectorAll('[data-ride-action="view"]').forEach(node => {
+        node.addEventListener('click', () => { iw.close(); onViewRideRef.current?.(entry.ride.id); });
+      });
+      // Resolve the popup's larger photo if we don't already have it cached.
+      if (photo && !ridePhotoUrlCache.get(photo.storage_path)) {
+        signedUrlsFor([photo.storage_path]).then(urlMap => {
+          const url = urlMap[photo.storage_path];
+          if (!url) return;
+          ridePhotoUrlCache.set(photo.storage_path, url);
+          const thumb = document.getElementById('ride-pin-thumb');
+          if (thumb) thumb.innerHTML = `<img src="${escapeHtml(url)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block"/>`;
+        }).catch(() => { /* leave shimmer */ });
+      }
+    });
   }
 
   useEffect(() => {
     if (!map) return;
     // Invalidate any in-flight fetch, then clear when off / logged out.
     const myReq = ++reqIdRef.current;
-    if (!enabled || !user || !supabase) { clearMarkers(); return; }
+    if (!enabled || !user || !supabase) { clearOverlays(); return; }
 
     (async () => {
       try {
         const { data, error } = await supabase
           .from('rides')
-          .select('id,title,ride_date,pins')
+          .select('id,title,ride_date,area_name,pins,ride_photos(id,storage_path,caption)')
           .eq('user_id', user.id)
           .order('ride_date', { ascending: false });
         if (error) throw error;
         // Ignore stale responses (toggled off, signed out, or a newer fetch).
         if (myReq !== reqIdRef.current) return;
 
-        clearMarkers();
+        clearOverlays();
         if (!infoWindowRef.current) infoWindowRef.current = new google.maps.InfoWindow();
+        const OverlayClass = getPhotoPinOverlayClass();
 
         (data || []).forEach((ride, rideIdx) => {
           const color = RIDE_PIN_COLORS[rideIdx % RIDE_PIN_COLORS.length];
-          const icon = ridePinIcon(color);
+          const photos = ride.ride_photos || [];
           (Array.isArray(ride.pins) ? ride.pins : []).forEach(pin => {
             if (!Number.isFinite(pin?.lat) || !Number.isFinite(pin?.lng)) return;
-            const marker = new google.maps.Marker({
-              position: { lat: pin.lat, lng: pin.lng },
-              map, icon, title: ride.title || 'Ride', zIndex: 50,
-            });
-            marker.addListener('click', () => {
-              infoWindowRef.current.setContent(ridePopupContent(ride, pin, color));
-              infoWindowRef.current.open(map, marker);
-            });
-            markersRef.current.push(marker);
+            const position = new google.maps.LatLng(pin.lat, pin.lng);
+            const mapPhoto = matchedPhotoForPin(photos, pin);   // only photo_exif pins get a thumbnail
+            const popupPhoto = photoForPin(photos, pin);         // specific photo, else ride's first
+
+            const el = document.createElement('div');
+            el.className = 'ride-map-pin ride-map-pin-dot';
+            el.style.setProperty('--ride-color', color);
+            el.title = ride.title || 'Ride';
+
+            const overlay = new OverlayClass(position, el);
+            const entry = {
+              ride, pin, color, mapPhoto, popupPhoto, position, el, overlay,
+              state: mapPhoto ? 'dot' : 'plain', // 'plain' dots never upgrade
+            };
+            el.addEventListener('click', () => openPopup(entry));
+            overlay.setMap(map);
+            entriesRef.current.push(entry);
           });
         });
+
+        // Lazy-load thumbnails now and whenever the viewport settles.
+        loadVisibleThumbs();
+        idleListenerRef.current = map.addListener('idle', loadVisibleThumbs);
       } catch (err) {
         console.error('[RideHistory] load failed:', err);
       }
     })();
   }, [map, enabled, user, refreshKey]);
 
-  // Remove markers on unmount.
-  useEffect(() => () => clearMarkers(), []);
+  // Remove overlays on unmount.
+  useEffect(() => () => clearOverlays(), []);
 
   return null;
 }
 
-export default function TrailMap({ activeFilters, findSingletrack, onMapReady, routeMode, onAddToRoute, onRemoveFromRoute, routeTrails, showRideHistory, ridesRefresh }) {
+export default function TrailMap({ activeFilters, findSingletrack, onMapReady, routeMode, onAddToRoute, onRemoveFromRoute, routeTrails, showRideHistory, ridesRefresh, onViewRide }) {
   const [status, setStatus] = useState({ type: 'idle' });
   return (
     <div className="map-wrapper">
@@ -647,7 +768,7 @@ export default function TrailMap({ activeFilters, findSingletrack, onMapReady, r
       >
         {onMapReady && <MapController onMapReady={onMapReady} />}
         <TrailLayer activeFilters={activeFilters} findSingletrack={findSingletrack} onStatusChange={setStatus} routeMode={routeMode} onAddToRoute={onAddToRoute} onRemoveFromRoute={onRemoveFromRoute} routeTrails={routeTrails} />
-        <RideHistoryLayer enabled={!!showRideHistory} refreshKey={ridesRefresh} />
+        <RideHistoryLayer enabled={!!showRideHistory} refreshKey={ridesRefresh} onViewRide={onViewRide} />
       </GoogleMap>
       <div className="map-status">
         {status.type === 'loading' && <div className="status-badge loading"><span className="spinner" /> Loading trails...</div>}

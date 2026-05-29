@@ -112,6 +112,23 @@ export function photoPath(userId, rideId, index, originalName) {
   return `${userId}/${rideId}/${index}-${base}.jpg`;
 }
 
+// Find the SPECIFIC photo a pin was auto-extracted from (source 'photo_exif'),
+// by matching the sanitized filename baked into its storage_path (see
+// photoPath). Returns null for manual pins, or when no matching photo exists.
+export function matchedPhotoForPin(photos, pin) {
+  if (!photos?.length || pin?.source !== 'photo_exif' || !pin.photo_filename) return null;
+  const base = safeName(pin.photo_filename).replace(/\.[^.]+$/, '');
+  return photos.find(p => typeof p.storage_path === 'string' && p.storage_path.endsWith(`-${base}.jpg`)) || null;
+}
+
+// Pick the photo that best represents a pin for display: the specific
+// EXIF-source photo when there is one, otherwise the ride's first photo.
+// Returns null if the ride has no photos.
+export function photoForPin(photos, pin) {
+  if (!photos?.length) return null;
+  return matchedPhotoForPin(photos, pin) || photos[0];
+}
+
 // Resolve a batch of storage paths to short-lived signed URLs. Returns a map of
 // { path: url }. Missing/failed entries are simply omitted (never throws).
 export async function signedUrlsFor(paths) {
