@@ -1,7 +1,9 @@
-// Ride logging helpers: image resize, Supabase Storage paths/signed URLs, and
-// the small bits of ride/photo CRUD shared by the modal, panel, and detail
-// views. Every function degrades gracefully if Supabase isn't configured.
+// Ride logging helpers: image resize, EXIF GPS extraction, Supabase Storage
+// paths/signed URLs, and the small bits of ride/photo CRUD shared by the modal,
+// panel, and detail views. Every function degrades gracefully if Supabase isn't
+// configured.
 import { supabase } from './supabase';
+import exifr from 'exifr';
 
 export const PHOTO_BUCKET = 'ride-photos';
 export const MAX_IMAGE_WIDTH = 1920;
@@ -63,6 +65,40 @@ export function resizeImage(file, maxWidth = MAX_IMAGE_WIDTH) {
     img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
     img.src = url;
   });
+}
+
+// Extract GPS coordinates + capture timestamp from a photo's EXIF metadata.
+// 100% client-side (no network); never throws — any missing field comes back
+// null and a parse failure is logged and skipped. Works with iPhone HEIC/HEIF
+// as well as JPEG/PNG.
+export async function extractPhotoExif(file) {
+  const result = { lat: null, lng: null, timestamp: null };
+  if (!file) return result;
+
+  // GPS — exifr.gps returns { latitude, longitude } or undefined.
+  try {
+    const gps = await exifr.gps(file);
+    if (gps && Number.isFinite(gps.latitude) && Number.isFinite(gps.longitude)) {
+      result.lat = gps.latitude;
+      result.lng = gps.longitude;
+    }
+  } catch (err) {
+    console.warn('[EXIF] GPS parse failed for', file?.name, err);
+  }
+
+  // Capture time — used to chronologically order the auto-pins.
+  try {
+    const meta = await exifr.parse(file, ['DateTimeOriginal']);
+    const dt = meta?.DateTimeOriginal;
+    if (dt) {
+      const t = dt instanceof Date ? dt.getTime() : new Date(dt).getTime();
+      if (Number.isFinite(t)) result.timestamp = t;
+    }
+  } catch (err) {
+    console.warn('[EXIF] timestamp parse failed for', file?.name, err);
+  }
+
+  return result;
 }
 
 // Sanitize a filename to safe storage characters.

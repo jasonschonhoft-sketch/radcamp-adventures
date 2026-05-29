@@ -56,6 +56,7 @@ function RidesMap({ rides, onViewRide }) {
               <div className="rides-iw-title">{rides[selected.rideIdx].title}</div>
               <div className="rides-iw-date">{formatRideDate(rides[selected.rideIdx].ride_date)}</div>
               {sel.label && <div className="rides-iw-label">{sel.label}</div>}
+              {sel.source === 'photo_exif' && <div className="rides-iw-origin">📷 Pin from photo</div>}
               <button className="rides-iw-btn" onClick={() => onViewRide(rides[selected.rideIdx])}>View Ride</button>
             </div>
           </InfoWindow>

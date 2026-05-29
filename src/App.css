@@ -1035,7 +1035,21 @@ input, textarea, select { font-size: 16px; }
   background: rgba(163,230,53,0.16); color: #a3e635; font-size: 12px; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
 }
+.ride-pin-photo-badge {
+  flex-shrink: 0; font-size: 13px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+}
 .ride-pin-label { flex: 1; padding: 7px 10px !important; font-size: 13px !important; }
+
+.ride-gps-note {
+  display: flex; align-items: center; gap: 7px; margin-top: 8px;
+  font-size: 12px; font-weight: 600; color: #a3e635;
+  background: rgba(163,230,53,0.1); border: 1px solid rgba(163,230,53,0.28);
+  border-radius: 8px; padding: 7px 10px; line-height: 1.4;
+}
+.ride-gps-note-busy { color: #c7d0dd; background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.1); }
+
+.rides-iw-origin { font-size: 11px; color: #65a30d; font-weight: 600; margin-top: 3px; }
 .ride-pin-remove {
   flex-shrink: 0; width: 26px; height: 26px; border-radius: 6px; border: none;
   background: rgba(239,68,68,0.14); color: #fca5a5; font-size: 18px; line-height: 1;

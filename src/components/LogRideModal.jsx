@@ -4,7 +4,7 @@ import { Map as GoogleMap, Marker } from '@vis.gl/react-google-maps';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import {
-  resizeImage, photoPath, todayISO, formatRideDate, signedUrlsFor, COLORADO_CENTER,
+  resizeImage, photoPath, todayISO, formatRideDate, signedUrlsFor, extractPhotoExif, COLORADO_CENTER,
 } from '../lib/rides';
 
 // Interactive pin-drop map. Tap to drop a pin; pins come from / go to parent.
@@ -49,6 +49,8 @@ export default function LogRideModal({ open, onClose, onSaved, mapRef, editRide 
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [progress, setProgress] = useState('');
+  const [extracting, setExtracting] = useState(false); // EXIF GPS parse in progress
+  const [gpsStats, setGpsStats] = useState({ detected: 0, total: 0 }); // auto-pin tally
 
   // Center the pin map on the editing ride's first pin, else the user's current
   // map view, else Colorado.
@@ -67,6 +69,8 @@ export default function LogRideModal({ open, onClose, onSaved, mapRef, editRide 
     setSaving(false);
     setProgress('');
     setRemovedPaths([]);
+    setExtracting(false);
+    setGpsStats({ detected: 0, total: 0 });
     if (isEdit) {
       setTitle(editRide.title || '');
       setRideDate(editRide.ride_date || todayISO());
@@ -114,11 +118,47 @@ export default function LogRideModal({ open, onClose, onSaved, mapRef, editRide 
 
   if (!open) return null;
 
-  function handleFiles(e) {
+  async function handleFiles(e) {
     const files = Array.from(e.target.files || []);
+    e.target.value = ''; // allow re-selecting the same file
+    if (!files.length) return;
+
     const next = files.map(file => ({ kind: 'new', file, url: URL.createObjectURL(file) }));
     setPhotos(prev => [...prev, ...next]);
-    e.target.value = '';
+
+    // Auto-extract GPS pins from photo EXIF — fully client-side, no network.
+    setExtracting(true);
+    try {
+      const extracted = await Promise.all(
+        files.map(async (file) => ({ file, exif: await extractPhotoExif(file) }))
+      );
+      const withGps = extracted.filter(x => x.exif.lat != null && x.exif.lng != null);
+      // Order chronologically by capture time so pins follow the ride; photos
+      // without a timestamp fall to the end while keeping their relative order.
+      withGps.sort((a, b) => (a.exif.timestamp ?? Infinity) - (b.exif.timestamp ?? Infinity));
+
+      if (withGps.length) {
+        setPins(prev => {
+          const startNum = prev.filter(p => p.source === 'photo_exif').length;
+          const autoPins = withGps.map((x, i) => ({
+            lat: x.exif.lat,
+            lng: x.exif.lng,
+            label: `Photo ${startNum + i + 1}`,
+            source: 'photo_exif',
+            photo_filename: x.file.name,
+          }));
+          return [...prev, ...autoPins]; // append — never drop manual pins
+        });
+      }
+      setGpsStats(prev => ({
+        detected: prev.detected + withGps.length,
+        total: prev.total + files.length,
+      }));
+    } catch (err) {
+      console.error('[LogRide] EXIF extraction failed:', err);
+    } finally {
+      setExtracting(false);
+    }
   }
 
   function removePhoto(idx) {
@@ -154,7 +194,13 @@ export default function LogRideModal({ open, onClose, onSaved, mapRef, editRide 
         duration_minutes: duration === '' ? null : Number(duration),
         elevation_gain_ft: elevation === '' ? null : Number(elevation),
         area_name: areaName.trim() || null,
-        pins: pins.map(p => ({ lat: p.lat, lng: p.lng, label: p.label || '' })),
+        pins: pins.map(p => ({
+          lat: p.lat,
+          lng: p.lng,
+          label: p.label || '',
+          ...(p.source ? { source: p.source } : {}),
+          ...(p.photo_filename ? { photo_filename: p.photo_filename } : {}),
+        })),
       };
 
       let rideId;
@@ -261,6 +307,9 @@ export default function LogRideModal({ open, onClose, onSaved, mapRef, editRide 
                 {pins.map((p, i) => (
                   <div className="ride-pin-item" key={i}>
                     <span className="ride-pin-num">{i + 1}</span>
+                    {p.source === 'photo_exif' && (
+                      <span className="ride-pin-photo-badge" title="Location auto-detected from photo">📷</span>
+                    )}
                     <input
                       className="auth-input ride-pin-label"
                       value={p.label}
@@ -276,7 +325,25 @@ export default function LogRideModal({ open, onClose, onSaved, mapRef, editRide 
 
           <div className="auth-field">
             <span className="auth-label">Photos</span>
-            <input className="ride-file" type="file" accept="image/*" multiple onChange={handleFiles} />
+            <input
+              className="ride-file"
+              type="file"
+              accept="image/heic,image/heif,image/jpeg,image/jpg,image/png,image/*"
+              multiple
+              onChange={handleFiles}
+            />
+            {extracting && (
+              <div className="ride-gps-note ride-gps-note-busy">
+                <span className="fc-spinner" /> Detecting photo locations…
+              </div>
+            )}
+            {!extracting && gpsStats.total > 0 && (
+              <div className="ride-gps-note">
+                {gpsStats.detected > 0
+                  ? `✓ Auto-detected location from ${gpsStats.detected} of ${gpsStats.total} photo${gpsStats.total === 1 ? '' : 's'}`
+                  : `No GPS location found in ${gpsStats.total} photo${gpsStats.total === 1 ? '' : 's'} — add pins by tapping the map`}
+              </div>
+            )}
             {photos.length > 0 && (
               <div className="ride-thumbs">
                 {photos.map((p, i) => (
