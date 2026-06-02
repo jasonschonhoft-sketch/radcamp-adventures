@@ -249,6 +249,7 @@ export default function FloatingControls({ activeFilters, onToggle, findSingletr
   const [shopsActive, setShopsActive] = useState(false);
   const [shopsLoading, setShopsLoading] = useState(false);
   const shopMarkersRef = useRef([]);
+  const userDotRef = useRef(null);
   const [campActive, setCampActiveInternal] = useState(false);
   const [campLoading, setCampLoading] = useState(false);
   const campMarkersRef = useRef([]);
@@ -300,9 +301,29 @@ export default function FloatingControls({ activeFilters, onToggle, findSingletr
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
         setLocating(false);
-        if (!mapRef.current) return;
-        mapRef.current.panTo({ lat: coords.latitude, lng: coords.longitude });
-        mapRef.current.setZoom(14);
+        const map = mapRef.current;
+        if (!map) return;
+        const pos = { lat: coords.latitude, lng: coords.longitude };
+        map.panTo(pos);
+        map.setZoom(14);
+        if (userDotRef.current) {
+          userDotRef.current.dot.setMap(null);
+          userDotRef.current.circle.setMap(null);
+        }
+        const dot = new google.maps.Marker({
+          position: pos, map, zIndex: 99999,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 8, fillColor: '#4285F4', fillOpacity: 1,
+            strokeColor: '#ffffff', strokeWeight: 3,
+          },
+        });
+        const circle = new google.maps.Circle({
+          map, center: pos, radius: coords.accuracy || 30,
+          strokeColor: '#4285F4', strokeOpacity: 0.4, strokeWeight: 1,
+          fillColor: '#4285F4', fillOpacity: 0.12, zIndex: 99998,
+        });
+        userDotRef.current = { dot, circle };
       },
       () => setLocating(false),
       { enableHighAccuracy: true, timeout: 8000 }
