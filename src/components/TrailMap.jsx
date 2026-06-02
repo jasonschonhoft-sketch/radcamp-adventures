@@ -133,16 +133,34 @@ async function fetchTrailsInBounds(bounds) {
     xmax: bounds.east, ymax: bounds.north,
     spatialReference: { wkid: 4326 },
   });
-  const params = new URLSearchParams({
+  const baseParams = {
     where: '1=1', geometry, geometryType: 'esriGeometryEnvelope',
     spatialRel: 'esriSpatialRelIntersects', inSR: '4326', outSR: '4326',
     outFields: 'name,hiking,bike,motorcycle,atv,ohv_gt_50,snowmobile,horse,surface,type,highway_ve,length_mi_,min_elevat,max_elevat,manager,dogs,url',
-    f: 'geojson', resultRecordCount: MAX_RECORDS,
-  });
-  const res = await fetch(`${COTREX_URL}?${params}`);
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  const data = await res.json();
-  return { features: data.features || [], exceeded: data.properties?.exceededTransferLimit === true };
+    f: 'geojson',
+  };
+  const all = [];
+  let offset = 0;
+  let exceeded = false;
+  // Page through results until the server stops flagging more. Cap at 20 pages
+  // (40k features) as a safety valve against an unbounded loop.
+  for (let page = 0; page < 20; page++) {
+    const params = new URLSearchParams({
+      ...baseParams,
+      resultRecordCount: MAX_RECORDS,
+      resultOffset: String(offset),
+    });
+    const res = await fetch(`${COTREX_URL}?${params}`);
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    const data = await res.json();
+    const feats = data.features || [];
+    all.push(...feats);
+    const more = data.properties?.exceededTransferLimit === true;
+    if (!more || feats.length === 0) { exceeded = false; break; }
+    offset += feats.length;
+    exceeded = true; // still more pages pending; will clear when loop completes
+  }
+  return { features: all, exceeded };
 }
 
 function TrailLayer({ activeFilters, findSingletrack, onStatusChange, routeMode, onAddToRoute, onRemoveFromRoute, routeTrails }) {
