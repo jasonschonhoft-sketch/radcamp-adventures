@@ -79,11 +79,15 @@ function getTrailActivities(props) {
   return acts;
 }
 
-// Each activity gets a visually distinct treatment so overlapping trails are
-// readable at a glance: a mix of dots, dashes, and solid lines across the
-// palette. Styles with opacity 0 draw ONLY their icons (dots/dashes) — the
-// underlying line is invisible (see buildDashedIcon). The "Find Singletrack"
-// toggle does NOT change styling; it only hides non-singletrack (TrailLayer).
+// Single-select drives styling: only one activity is ever shown, so this is
+// keyed purely off `activity` (no priority ladder). Each activity gets its own
+// distinct color + dot/dash signature, tuned via explicit knobs:
+//   dotted/dashed  → draw icons instead of a line (paired with opacity 0 so the
+//                    underlying stroke is invisible — only the dots/dashes show)
+//   dotScale       → dot radius (px ≈ scale); dotRepeat → spacing between dots
+//   dashScale      → dash half-length; dashRepeat → spacing between dashes
+// For singletrack-first activities (moto, hiking) the doubletrack/road variant
+// is a muted thin line so the prominent singletrack pops.
 function getTrailStyle(activity, props) {
   const cfg = ACTIVITY_CONFIG[activity];
   if (!cfg) return null;
@@ -91,36 +95,39 @@ function getTrailStyle(activity, props) {
 
   switch (activity) {
     case 'dirt_bike':
-      // Moto signature = lime. EVERY singletrack (any Trail) renders as bold
-      // lime dots — regardless of the `surface` value. The old code only did
-      // this when surface === 'dirt', so singletrack with any other surface
-      // fell through to a solid red line (the bug). Doubletrack/roads render as
-      // lime dashes so they read as moto-legal but visually subordinate.
+      // Moto = Natural-Atlas trail look: a bright LIME casing line with dark-green
+      // round dots centered on top (the visible stroke is the casing — opacity > 0
+      // — and the dots ride on top as icons). Applies to EVERY singletrack (any
+      // Trail), regardless of `surface` — the old code only dotted surface==='dirt',
+      // so other surfaces fell through to red. Doubletrack/roads = muted thin lime.
       return isTrail
-        ? { color: '#a3e635', weight: 3, opacity: 0, dotted: true }
-        : { color: '#a3e635', weight: 2, opacity: 0, dashed: true };
+        ? { color: '#a3e635', weight: 6, opacity: 0.7, dotted: true, dotColor: '#14532d', dotScale: 2.5, dotRepeat: 10 }
+        : { color: '#a3e635', weight: 1.5, opacity: 0.4 };
     case 'hiking':
-      // Dark-green fine dashes.
-      return { color: cfg.color, weight: 2, opacity: 0, dashed: true, fine: true };
-    case 'gravel_bike':
-      // Teal dashes — gravel/unpaved.
-      return { color: cfg.color, weight: 2.5, opacity: 0, dashed: true };
-    case 'horse':
-      // Brown dashes (distinct from hiking's fine green dashes).
-      return { color: cfg.color, weight: 2, opacity: 0, dashed: true };
-    case 'snowmobile':
-      // Pale dashes.
-      return { color: cfg.color, weight: 2.5, opacity: 0, dashed: true };
+      // Hiking = thinner DARK-green fine dashes — delicate, clearly != moto.
+      return isTrail
+        ? { color: cfg.color, weight: 2, opacity: 0, dashed: true, dashScale: 2, dashRepeat: 10 }
+        : { color: cfg.color, weight: 1.5, opacity: 0.4 };
     case 'mountain_bike':
-      return { color: cfg.color, weight: 2.5, opacity: 0.9 };  // solid blue
+      return { color: cfg.color, weight: 2.5, opacity: 0.95 };  // solid blue
+    case 'gravel_bike':
+      // Teal medium dashes — gravel/unpaved.
+      return { color: cfg.color, weight: 2.5, opacity: 0, dashed: true, dashScale: 3, dashRepeat: 14 };
     case 'road_bike':
-      return { color: cfg.color, weight: 2.5, opacity: 0.9 };  // solid orange
+      return { color: cfg.color, weight: 2.5, opacity: 0.95 };  // solid orange
     case 'bike_path':
-      return { color: cfg.color, weight: 3, opacity: 0.95 };   // bold solid pink
+      return { color: cfg.color, weight: 3, opacity: 0.95 };    // bold solid pink
     case 'ohv':
-      return { color: cfg.color, weight: 3, opacity: 0.85 };   // bold solid amber
+      // Amber dots — smaller & tighter than moto's bold lime dots.
+      return { color: cfg.color, weight: 2, opacity: 0, dotted: true, dotScale: 2.5, dotRepeat: 10 };
+    case 'horse':
+      // Brown long dashes.
+      return { color: cfg.color, weight: 2, opacity: 0, dashed: true, dashScale: 4, dashRepeat: 18 };
+    case 'snowmobile':
+      // Pale wide dashes.
+      return { color: cfg.color, weight: 2.5, opacity: 0, dashed: true, dashScale: 3, dashRepeat: 12 };
     default:
-      return { color: cfg.color, weight: cfg.weight, opacity: 0.85 };
+      return { color: cfg.color, weight: cfg.weight, opacity: 0.9 };
   }
 }
 
@@ -191,18 +198,25 @@ function dijkstraPath(adj, start, goal) {
 // for plain lines so it also works to CLEAR icons via setOptions when a trail
 // switches from highlighted (dotted) to blended-in (solid).
 function buildDashedIcon(style) {
-  if (style.dotted) return [{
-    // Bold round dots — the moto/lime signature.
-    icon: { path: google.maps.SymbolPath.CIRCLE, fillColor: style.color, fillOpacity: 1, strokeOpacity: 0, scale: (style.weight || 2) + 0.5 },
-    offset: '0', repeat: '9px',
-  }];
+  if (style.dotted) {
+    // Filled round dots. `dotColor` (defaults to the line color) lets the dots
+    // contrast against a visible casing line — e.g. dark-green dots on the lime
+    // moto casing. `dotRepeat` must comfortably exceed the dot diameter
+    // (≈ 2 × dotScale) or the dots merge into a solid-looking line.
+    const scale = style.dotScale ?? 3.5;
+    const dotColor = style.dotColor ?? style.color;
+    return [{
+      icon: { path: google.maps.SymbolPath.CIRCLE, fillColor: dotColor, fillOpacity: 1, strokeColor: dotColor, strokeWeight: 0, scale },
+      offset: '0', repeat: `${style.dotRepeat ?? 14}px`,
+    }];
+  }
   if (style.dashed) {
-    // `fine` = short, tightly-spaced dashes (hiking); otherwise medium dashes.
-    const scale = style.fine ? 1.5 : 3;
-    const repeat = style.fine ? '7px' : '12px';
+    // Short line segments along the path. `dashScale` ≈ half the dash length;
+    // `dashRepeat` is the center-to-center spacing.
+    const scale = style.dashScale ?? 3;
     return [{
       icon: { path: 'M 0,-1 0,1', strokeColor: style.color, strokeOpacity: 1, strokeWeight: style.weight || 2, scale },
-      offset: '0', repeat,
+      offset: '0', repeat: `${style.dashRepeat ?? 12}px`,
     }];
   }
   return [];
