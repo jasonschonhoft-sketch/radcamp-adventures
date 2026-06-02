@@ -210,7 +210,8 @@ function TrailLayer({ activeFilters, findSingletrack, onStatusChange, routeMode,
     ACTIVITY_KEYS.forEach(activity => {
       const visible = !!activeFilters[activity];
       (polylinesRef.current[activity] || []).forEach(p => {
-        const show = visible && (!findSingletrack || p.__singletrack);
+        const motoActive = !!activeFilters.dirt_bike;
+        const show = visible && (!(findSingletrack && motoActive) || p.__singletrack);
         p.setMap(show ? map : null);
       });
     });
@@ -305,7 +306,8 @@ function TrailLayer({ activeFilters, findSingletrack, onStatusChange, routeMode,
           const dashedIcon = buildDashedIcon(style);
 
           coordSets.forEach(coords => {
-            const showPolyline = visible && (!findSingletrackRef.current || singletrack);
+            const motoActive = !!activeFiltersRef.current?.dirt_bike;
+            const showPolyline = visible && (!(findSingletrackRef.current && motoActive) || singletrack);
             const polyline = new google.maps.Polyline({
               path: coords.map(([lng, lat]) => ({ lat, lng })),
               strokeColor: style.color,
