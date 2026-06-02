@@ -251,6 +251,7 @@ function SidebarContent({
 export default function FloatingControls({ activeFilters, onToggle, findSingletrack, onToggleSingletrack, onShowAllTrails, mapRef, externalCampActive, onCampChange, externalShopsActive, onShopsChange, onRouteModeChange, routeTrails: externalRouteTrails, onRouteTrailsChange, routeInfo, onLogRide, onViewRides, onSignIn, showRideHistory, onToggleRideHistory }) {
   const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopCollapsed, setDesktopCollapsed] = useState(false); // hide the desktop sidebar (COTREX-style)
   const [locating, setLocating] = useState(false);
   const [shopsActive, setShopsActive] = useState(false);
   const [shopsLoading, setShopsLoading] = useState(false);
@@ -501,11 +502,20 @@ export default function FloatingControls({ activeFilters, onToggle, findSingletr
 
   return (
     <>
-      <aside className="fc-sidebar fc-sidebar-desktop">
-        <SidebarContent {...sidebarProps} onClose={() => {}} showClose={false} />
-      </aside>
+      {!desktopCollapsed && (
+        <aside className="fc-sidebar fc-sidebar-desktop">
+          <SidebarContent {...sidebarProps} onClose={() => setDesktopCollapsed(true)} showClose={true} />
+        </aside>
+      )}
 
-      <div className="floating-controls">
+      <div className={`floating-controls${desktopCollapsed ? ' fc-collapsed' : ''}`}>
+        {desktopCollapsed && (
+          <button className="fc-btn fc-desktop-only" onClick={() => setDesktopCollapsed(false)} aria-label="Show trail panel">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+            </svg>
+          </button>
+        )}
         <button className={`fc-btn${locating ? ' fc-btn-spin' : ''}`} onClick={handleLocate} aria-label="Locate me">
           {locating ? <span className="fc-spinner" /> : (
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">

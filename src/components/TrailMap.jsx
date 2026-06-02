@@ -105,12 +105,13 @@ function getTrailStyle(activity, props) {
   switch (activity) {
     case 'dirt_bike':
       // Moto, matching the COTREX/Natural-Atlas look:
-      //   • Singletrack (Trail type) = small round green dots.
-      //   • Doubletrack / forest-roads (Road type) = dark-green dashes riding on a
-      //     light-green (lime) casing — the two-tone dashed line.
-      // Trail vs Road is the singletrack/doubletrack signal in the data (Trail
-      // segments are narrow moto singletrack; Road segments are forest roads).
-      return isTrail
+      //   • Singletrack (narrow trail) = small round green dots.
+      //   • Doubletrack / forest-roads = dark-green dashes riding on a light-green
+      //     (lime) casing — the two-tone dashed line.
+      // Singletrack is a narrow trail that excludes ATVs/OHVs/full-size vehicles
+      // (see isSingletrack) — NOT merely type==='Trail', since two-track trails
+      // like Lime Ridge (#624) are typed 'Trail' but admit ATVs and should dash.
+      return isSingletrack(props)
         ? { color: '#2f9e44', weight: 2, opacity: 0, dotted: true, dotColor: '#2f9e44', dotScale: 2, dotRepeat: 8 }
         : { color: '#a3e635', weight: 5, opacity: 0.65, dashed: true, dashColor: '#166534', dashScale: 3.5, dashRepeat: 13 };
     case 'hiking':
@@ -141,8 +142,15 @@ function getTrailStyle(activity, props) {
   }
 }
 
+// Singletrack = a narrow trail: type 'Trail' that does NOT admit ATVs, OHVs, or
+// full-size highway vehicles. Excluding those is what separates true singletrack
+// (motorcycle/bike/foot width) from two-track trails — e.g. Lime Ridge Trail
+// (#624) is typed 'Trail' but allows ATVs, so it's two-track, not singletrack.
 function isSingletrack(props) {
-  return props.type === 'Trail' && (props.surface || '').toLowerCase() === 'dirt';
+  return props.type === 'Trail'
+    && !allowsAccess(props.atv)
+    && !allowsAccess(props.ohv_gt_50)
+    && !allowsAccess(props.highway_ve);
 }
 
 // --- Route snapping ---------------------------------------------------------

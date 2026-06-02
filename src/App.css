@@ -338,7 +338,18 @@ input, textarea, select { font-size: 16px; }
 /* Desktop: hide mobile-only elements */
 @media (min-width: 641px) {
   .fc-mobile-only { display: none !important; }
+  .fc-desktop-only { display: flex !important; }
 }
+
+/* The "show trail panel" button only exists on desktop when collapsed. */
+.fc-desktop-only { display: none; }
+@media (max-width: 640px) {
+  .fc-desktop-only { display: none !important; }
+}
+
+/* When the desktop sidebar is collapsed, the map fills the width, so the
+   floating controls move back to the left edge. */
+.floating-controls.fc-collapsed { left: 16px; }
 
 /* ── Weather widget
 
