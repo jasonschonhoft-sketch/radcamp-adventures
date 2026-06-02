@@ -95,14 +95,15 @@ function getTrailStyle(activity, props) {
 
   switch (activity) {
     case 'dirt_bike':
-      // Moto = Natural-Atlas trail look: a bright LIME casing line with dark-green
-      // round dots centered on top (the visible stroke is the casing — opacity > 0
-      // — and the dots ride on top as icons). Applies to EVERY singletrack (any
-      // Trail), regardless of `surface` — the old code only dotted surface==='dirt',
-      // so other surfaces fell through to red. Doubletrack/roads = muted thin lime.
+      // Moto, matching the COTREX/Natural-Atlas look:
+      //   • Singletrack (Trail type) = small round green dots.
+      //   • Doubletrack / forest-roads (Road type) = dark-green dashes riding on a
+      //     light-green (lime) casing — the two-tone dashed line.
+      // Trail vs Road is the singletrack/doubletrack signal in the data (Trail
+      // segments are narrow moto singletrack; Road segments are forest roads).
       return isTrail
-        ? { color: '#a3e635', weight: 6, opacity: 0.7, dotted: true, dotColor: '#14532d', dotScale: 2.5, dotRepeat: 10 }
-        : { color: '#a3e635', weight: 1.5, opacity: 0.4 };
+        ? { color: '#2f9e44', weight: 2, opacity: 0, dotted: true, dotColor: '#2f9e44', dotScale: 2, dotRepeat: 8 }
+        : { color: '#a3e635', weight: 5, opacity: 0.65, dashed: true, dashColor: '#166534', dashScale: 3.5, dashRepeat: 13 };
     case 'hiking':
       // Hiking = thinner DARK-green fine dashes — delicate, clearly != moto.
       return isTrail
@@ -212,10 +213,13 @@ function buildDashedIcon(style) {
   }
   if (style.dashed) {
     // Short line segments along the path. `dashScale` ≈ half the dash length;
-    // `dashRepeat` is the center-to-center spacing.
+    // `dashRepeat` is the center-to-center spacing. `dashColor` (defaults to the
+    // line color) lets dashes contrast against a visible casing — e.g. dark-green
+    // dashes on the lime moto-doubletrack casing.
     const scale = style.dashScale ?? 3;
+    const dashColor = style.dashColor ?? style.color;
     return [{
-      icon: { path: 'M 0,-1 0,1', strokeColor: style.color, strokeOpacity: 1, strokeWeight: style.weight || 2, scale },
+      icon: { path: 'M 0,-1 0,1', strokeColor: dashColor, strokeOpacity: 1, strokeWeight: style.weight || 2, scale },
       offset: '0', repeat: `${style.dashRepeat ?? 12}px`,
     }];
   }
