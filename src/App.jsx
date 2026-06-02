@@ -232,8 +232,12 @@ export default function App() {
       const onKeys = ACTIVITY_KEYS.filter(k => prev[k]);
       const isSoleActive = onKeys.length === 1 && onKeys[0] === activity;
       if (isSoleActive) {
+        // Tapped the active one -> clear all. Find Singletrack is moto-only, so clear it too.
+        setFindSingletrack(false);
         return Object.fromEntries(ACTIVITY_KEYS.map(k => [k, false]));
       }
+      // Find Singletrack only applies to Moto; clear it when switching to anything else.
+      if (activity !== 'dirt_bike') setFindSingletrack(false);
       return Object.fromEntries(ACTIVITY_KEYS.map(k => [k, k === activity]));
     });
   }, []);
