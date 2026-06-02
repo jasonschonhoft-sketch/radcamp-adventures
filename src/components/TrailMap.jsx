@@ -44,18 +44,27 @@ function getLabelPosition(coordSets) {
   return { lat, lng };
 }
 
+// COTREX access fields aren't just 'yes'/'no' — seasonally-open trails carry a
+// date range like '05/31-02/29' instead of 'yes' (e.g. Marshall Pass Road's
+// motorcycle/atv/highway_ve fields). Treat anything that isn't blank or 'no' as
+// allowed, so those seasonal segments still render.
+function allowsAccess(v) {
+  const s = (v || '').trim().toLowerCase();
+  return s !== '' && s !== 'no';
+}
+
 function getTrailActivities(props) {
   const acts = [];
   const surface = (props.surface || '').toLowerCase();
   const isPaved = PAVED_SURFACES.has(surface);
   const isTrail = props.type === 'Trail';
   const isRoad = props.type === 'Road';
-  const isHighwayVehicle = props.highway_ve === 'yes';
+  const isHighwayVehicle = allowsAccess(props.highway_ve);
 
-  if (props.hiking === 'yes') acts.push('hiking');
-  if (props.horse === 'yes') acts.push('horse');
+  if (allowsAccess(props.hiking)) acts.push('hiking');
+  if (allowsAccess(props.horse)) acts.push('horse');
 
-  if (props.bike === 'yes') {
+  if (allowsAccess(props.bike)) {
     if (isTrail) {
       acts.push('mountain_bike');
     } else if (isRoad && isPaved) {
@@ -69,12 +78,12 @@ function getTrailActivities(props) {
     }
   }
 
-  if (props.motorcycle === 'yes') {
+  if (allowsAccess(props.motorcycle)) {
     acts.push('dirt_bike');
   }
 
-  if (props.atv === 'yes' || props.ohv_gt_50 === 'yes') acts.push('ohv');
-  if (props.snowmobile === 'yes') acts.push('snowmobile');
+  if (allowsAccess(props.atv) || allowsAccess(props.ohv_gt_50)) acts.push('ohv');
+  if (allowsAccess(props.snowmobile)) acts.push('snowmobile');
 
   return acts;
 }
