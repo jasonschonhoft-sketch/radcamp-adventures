@@ -225,7 +225,17 @@ export default function App() {
   const addToRouteRef = useRef(null);
 
   const toggleFilter = useCallback((activity) => {
-    setActiveFilters(prev => ({ ...prev, [activity]: !prev[activity] }));
+    // Single-select: tapping an activity makes it the ONLY active one.
+    // Tapping the already-active one clears all (blank map). Camp/shop overlays
+    // are separate state and unaffected.
+    setActiveFilters(prev => {
+      const onKeys = ACTIVITY_KEYS.filter(k => prev[k]);
+      const isSoleActive = onKeys.length === 1 && onKeys[0] === activity;
+      if (isSoleActive) {
+        return Object.fromEntries(ACTIVITY_KEYS.map(k => [k, false]));
+      }
+      return Object.fromEntries(ACTIVITY_KEYS.map(k => [k, k === activity]));
+    });
   }, []);
 
   function handleModalSelect(activity, multiKeys) {
