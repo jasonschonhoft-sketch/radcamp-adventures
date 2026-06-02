@@ -395,7 +395,6 @@ function TrailLayer({ activeFilters, findSingletrack, onStatusChange, routeMode,
 
               const lat = e.latLng.lat();
               const lng = e.latLng.lng();
-              const thumbUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=14&size=240x130&maptype=hybrid&key=${MAPS_API_KEY}`;
 
               const displayName = properties.name?.trim() || 'Unnamed Trail';
               const aiKey = trailName || displayName;
@@ -418,8 +417,7 @@ function TrailLayer({ activeFilters, findSingletrack, onStatusChange, routeMode,
 
               const infoWindow = new google.maps.InfoWindow({
                 content: `<div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;min-width:220px;max-width:240px;overflow:hidden;border-radius:10px">
-                  <img src="${thumbUrl}" style="width:100%;height:130px;object-fit:cover;display:block;border-radius:10px 10px 0 0" />
-                  <div style="padding:10px 12px 8px">
+                  <div style="padding:12px 12px 8px">
                     <div style="font-size:14px;font-weight:700;color:#e8edf5;margin-bottom:2px;line-height:1.3">${properties.name?.trim() || 'Unnamed Trail'}</div>
                     ${trailTypeLabel ? `<div style="font-size:10px;color:#a3e635;font-weight:600;letter-spacing:0.5px;margin-bottom:6px">${trailTypeLabel}</div>` : ''}
                     <div style="margin-bottom:6px">${actRows}</div>
@@ -777,7 +775,7 @@ export default function TrailMap({ activeFilters, findSingletrack, onMapReady, r
         defaultCenter={COLORADO_CENTER}
         defaultZoom={10}
         gestureHandling="greedy"
-        mapTypeId="hybrid"
+        mapTypeId="roadmap"
         mapTypeControl={true}
         mapTypeControlOptions={{ position: window.google?.maps?.ControlPosition?.BOTTOM_LEFT ?? 6 }}
         fullscreenControl={false}
