@@ -79,37 +79,112 @@ function getTrailActivities(props) {
   return acts;
 }
 
+// Each activity gets a visually distinct treatment so overlapping trails are
+// readable at a glance: a mix of dots, dashes, and solid lines across the
+// palette. Styles with opacity 0 draw ONLY their icons (dots/dashes) — the
+// underlying line is invisible (see buildDashedIcon). The "Find Singletrack"
+// toggle does NOT change styling; it only hides non-singletrack (TrailLayer).
 function getTrailStyle(activity, props) {
   const cfg = ACTIVITY_CONFIG[activity];
   if (!cfg) return null;
   const isTrail = props.type === 'Trail';
-  const isRoad = props.type === 'Road';
-  const surface = (props.surface || '').toLowerCase();
 
-  // Moto (dirt_bike) singletrack = bright lime dotted markers. This is ALWAYS
-  // the look — it's the signature visual. ONLY the "Moto" activity gets the
-  // lime treatment on dirt singletrack; every other activity (hiking, MTB,
-  // etc.) renders the same trail as a normal solid colored line. The "Find
-  // Singletrack" toggle does NOT change this styling — it only controls whether
-  // non-singletrack trails are hidden (see TrailLayer visibility effect).
-  if (activity === 'dirt_bike' && isTrail && surface === 'dirt') {
-    return { color: '#a3e635', weight: 2.5, opacity: 0, dotted: true };
+  switch (activity) {
+    case 'dirt_bike':
+      // Moto signature = lime. EVERY singletrack (any Trail) renders as bold
+      // lime dots — regardless of the `surface` value. The old code only did
+      // this when surface === 'dirt', so singletrack with any other surface
+      // fell through to a solid red line (the bug). Doubletrack/roads render as
+      // lime dashes so they read as moto-legal but visually subordinate.
+      return isTrail
+        ? { color: '#a3e635', weight: 3, opacity: 0, dotted: true }
+        : { color: '#a3e635', weight: 2, opacity: 0, dashed: true };
+    case 'hiking':
+      // Dark-green fine dashes.
+      return { color: cfg.color, weight: 2, opacity: 0, dashed: true, fine: true };
+    case 'gravel_bike':
+      // Teal dashes — gravel/unpaved.
+      return { color: cfg.color, weight: 2.5, opacity: 0, dashed: true };
+    case 'horse':
+      // Brown dashes (distinct from hiking's fine green dashes).
+      return { color: cfg.color, weight: 2, opacity: 0, dashed: true };
+    case 'snowmobile':
+      // Pale dashes.
+      return { color: cfg.color, weight: 2.5, opacity: 0, dashed: true };
+    case 'mountain_bike':
+      return { color: cfg.color, weight: 2.5, opacity: 0.9 };  // solid blue
+    case 'road_bike':
+      return { color: cfg.color, weight: 2.5, opacity: 0.9 };  // solid orange
+    case 'bike_path':
+      return { color: cfg.color, weight: 3, opacity: 0.95 };   // bold solid pink
+    case 'ohv':
+      return { color: cfg.color, weight: 3, opacity: 0.85 };   // bold solid amber
+    default:
+      return { color: cfg.color, weight: cfg.weight, opacity: 0.85 };
   }
-  // Moto doubletrack/road = solid lighter red
-  if (activity === 'dirt_bike' && isRoad) {
-    return { color: '#f87171', weight: 2, opacity: 0.85 };
-  }
-  // UTV connecting roads = slightly heavier
-  if (activity === 'ohv' && isRoad) {
-    return { color: cfg.color, weight: 2.5, opacity: 0.85 };
-  }
-
-  // Everything else (incl. hiking/MTB on dirt singletrack): solid colored line.
-  return { color: cfg.color, weight: cfg.weight, opacity: 0.85 };
 }
 
 function isSingletrack(props) {
   return props.type === 'Trail' && (props.surface || '').toLowerCase() === 'dirt';
+}
+
+// --- Route snapping ---------------------------------------------------------
+// Two-point route planning snaps a path through the network of loaded trail
+// segments. Each segment's two endpoints become graph nodes; coincident
+// endpoints (trail junctions) collapse onto a shared node so segments connect.
+
+const NODE_PRECISION = 4; // ~11m grid — merges junction endpoints into one node
+
+function nodeKey(lat, lng) {
+  return `${lat.toFixed(NODE_PRECISION)},${lng.toFixed(NODE_PRECISION)}`;
+}
+
+// Great-circle distance in miles between two {lat,lng} points (haversine).
+function haversineMiles(a, b) {
+  const toRad = d => (d * Math.PI) / 180;
+  const R = 3958.8;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const s = Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+
+// Dijkstra over an adjacency map (nodeKey -> [{ to, weight, name, pl }]).
+// Returns the ordered edge list from start to goal, or null if unreachable.
+function dijkstraPath(adj, start, goal) {
+  const dist = new Map([[start, 0]]);
+  const prev = new Map();
+  const visited = new Set();
+  while (true) {
+    // Smallest-tentative-distance unvisited node (linear scan — node counts
+    // here are modest, a few thousand at most, so a heap isn't worth it).
+    let u = null, ud = Infinity;
+    for (const [k, d] of dist) {
+      if (!visited.has(k) && d < ud) { ud = d; u = k; }
+    }
+    if (u === null) break;
+    visited.add(u);
+    if (u === goal) break;
+    for (const edge of (adj.get(u) || [])) {
+      if (visited.has(edge.to)) continue;
+      const nd = ud + edge.weight;
+      if (nd < (dist.get(edge.to) ?? Infinity)) {
+        dist.set(edge.to, nd);
+        prev.set(edge.to, { from: u, edge });
+      }
+    }
+  }
+  if (start !== goal && !prev.has(goal)) return null;
+  const edges = [];
+  let cur = goal;
+  while (cur !== start) {
+    const step = prev.get(cur);
+    if (!step) return null;
+    edges.unshift(step.edge);
+    cur = step.from;
+  }
+  return edges;
 }
 
 // Build the polyline `icons` array for a given style. Returns [] (no symbols)
@@ -117,13 +192,19 @@ function isSingletrack(props) {
 // switches from highlighted (dotted) to blended-in (solid).
 function buildDashedIcon(style) {
   if (style.dotted) return [{
-    icon: { path: 'M 0,-1.5 0,1.5', strokeColor: style.color, strokeOpacity: 1, strokeWeight: 4, fillOpacity: 0, scale: 2 },
-    offset: '0', repeat: '5px',
+    // Bold round dots — the moto/lime signature.
+    icon: { path: google.maps.SymbolPath.CIRCLE, fillColor: style.color, fillOpacity: 1, strokeOpacity: 0, scale: (style.weight || 2) + 0.5 },
+    offset: '0', repeat: '9px',
   }];
-  if (style.dashed) return [{
-    icon: { path: 'M 0,-1 0,1', strokeOpacity: 0.9, scale: 3 },
-    offset: '0', repeat: '12px',
-  }];
+  if (style.dashed) {
+    // `fine` = short, tightly-spaced dashes (hiking); otherwise medium dashes.
+    const scale = style.fine ? 1.5 : 3;
+    const repeat = style.fine ? '7px' : '12px';
+    return [{
+      icon: { path: 'M 0,-1 0,1', strokeColor: style.color, strokeOpacity: 1, strokeWeight: style.weight || 2, scale },
+      offset: '0', repeat,
+    }];
+  }
   return [];
 }
 
@@ -163,7 +244,7 @@ async function fetchTrailsInBounds(bounds) {
   return { features: all, exceeded };
 }
 
-function TrailLayer({ activeFilters, findSingletrack, onStatusChange, routeMode, onAddToRoute, onRemoveFromRoute, routeTrails }) {
+function TrailLayer({ activeFilters, findSingletrack, onStatusChange, routeMode, onReplaceRoute, onRouteInfo, routeTrails }) {
   const map = useMap();
   const polylinesRef = useRef({});
   const activeFiltersRef = useRef(activeFilters);
@@ -175,8 +256,125 @@ function TrailLayer({ activeFilters, findSingletrack, onStatusChange, routeMode,
   const routePolylinesRef = useRef([]);
   const routeTrailsRef = useRef([]);
   const labelsRef = useRef([]); // [{ marker, activities }]
+  // Route-snapping state: the up-to-two tapped endpoints, their A/B markers, and
+  // the polylines currently highlighted as the snapped path.
+  const routeEndpointsRef = useRef([]);     // [{ lat, lng }]
+  const routePointMarkersRef = useRef([]);  // google.maps.Marker (A, B)
+  const routeHighlightRef = useRef([]);     // polylines highlighted as the path
   useEffect(() => { routeModeRef.current = routeMode; }, [routeMode]);
   routeTrailsRef.current = routeTrails || [];
+
+  // Reset all snapped-route visuals (highlights + A/B markers + endpoints).
+  function clearSnappedRoute() {
+    routeHighlightRef.current.forEach(p => {
+      try { p.setOptions({ strokeColor: p.__color, strokeWeight: p.__origWeight, strokeOpacity: p.__origOpacity }); }
+      catch { /* polyline detached after a reload — nothing to reset */ }
+    });
+    routeHighlightRef.current = [];
+    routePointMarkersRef.current.forEach(m => m.setMap(null));
+    routePointMarkersRef.current = [];
+    routeEndpointsRef.current = [];
+  }
+
+  // Build an undirected graph from the currently-visible trail segments. Each
+  // polyline is one edge between its two endpoint nodes; identical segments
+  // (same endpoints, e.g. shared across activities) are deduped.
+  function buildRouteGraph() {
+    const adj = new Map();
+    const nodePos = new Map();
+    const seen = new Set();
+    const ensure = (k, lat, lng) => {
+      if (!nodePos.has(k)) nodePos.set(k, { lat, lng });
+      if (!adj.has(k)) adj.set(k, []);
+    };
+    ACTIVITY_KEYS.forEach(activity => {
+      if (!activeFiltersRef.current[activity]) return;
+      (polylinesRef.current[activity] || []).forEach(p => {
+        const path = p.getPath();
+        const n = path.getLength();
+        if (n < 2) return;
+        const coords = [];
+        for (let i = 0; i < n; i++) { const pt = path.getAt(i); coords.push({ lat: pt.lat(), lng: pt.lng() }); }
+        const ka = nodeKey(coords[0].lat, coords[0].lng);
+        const kb = nodeKey(coords[n - 1].lat, coords[n - 1].lng);
+        if (ka === kb) return; // degenerate / loop segment — skip
+        const sig = ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`;
+        if (seen.has(sig)) return;
+        seen.add(sig);
+        let miles = 0;
+        for (let i = 1; i < coords.length; i++) miles += haversineMiles(coords[i - 1], coords[i]);
+        const name = p.__properties?.name?.trim() || 'Unnamed Trail';
+        ensure(ka, coords[0].lat, coords[0].lng);
+        ensure(kb, coords[n - 1].lat, coords[n - 1].lng);
+        adj.get(ka).push({ to: kb, weight: miles, name, pl: p });
+        adj.get(kb).push({ to: ka, weight: miles, name, pl: p });
+      });
+    });
+    return { adj, nodePos };
+  }
+
+  function nearestNode(nodePos, lat, lng) {
+    let best = null, bestD = Infinity;
+    for (const [k, pos] of nodePos) {
+      const d = haversineMiles(pos, { lat, lng });
+      if (d < bestD) { bestD = d; best = k; }
+    }
+    return best;
+  }
+
+  // Record a tapped endpoint and its marker; compute once two are placed. A
+  // third tap starts a fresh pair.
+  function addRoutePoint(pt) {
+    if (routeEndpointsRef.current.length >= 2) clearSnappedRoute();
+    routeEndpointsRef.current.push(pt);
+    const idx = routeEndpointsRef.current.length;
+    const marker = new google.maps.Marker({
+      position: pt, map, zIndex: 99999,
+      label: { text: idx === 1 ? 'A' : 'B', color: '#fff', fontSize: '12px', fontWeight: '700' },
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE, scale: 11,
+        fillColor: idx === 1 ? '#22c55e' : '#ef4444', fillOpacity: 1,
+        strokeColor: '#fff', strokeWeight: 2.5,
+      },
+    });
+    routePointMarkersRef.current.push(marker);
+    if (idx === 1) onRouteInfo?.('Start set — now tap your destination trail.');
+    else computeSnappedRoute();
+  }
+
+  // Snap the two endpoints to the nearest graph nodes and shortest-path between
+  // them, highlighting the path and publishing the trail list to the panel.
+  function computeSnappedRoute() {
+    const [a, b] = routeEndpointsRef.current;
+    const { adj, nodePos } = buildRouteGraph();
+    if (nodePos.size === 0) { onRouteInfo?.('No trails loaded here to route along.'); return; }
+    const start = nearestNode(nodePos, a.lat, a.lng);
+    const goal = nearestNode(nodePos, b.lat, b.lng);
+    if (!start || !goal || start === goal) { onRouteInfo?.('Pick two points further apart.'); return; }
+    const edges = dijkstraPath(adj, start, goal);
+    if (!edges || edges.length === 0) {
+      onRouteInfo?.('No connected trail path between those points. Try points on linked trails.');
+      onReplaceRoute?.([]);
+      return;
+    }
+    // Highlight the path segments in bold white.
+    edges.forEach(({ pl }) => {
+      pl.setOptions({ strokeColor: '#ffffff', strokeOpacity: 1, strokeWeight: (pl.__origWeight || 2) + 3 });
+      routeHighlightRef.current.push(pl);
+    });
+    // Collapse consecutive same-name segments into route stops for the panel.
+    const list = [];
+    edges.forEach(({ name, weight, pl }) => {
+      const last = list[list.length - 1];
+      if (last && last.name === name) { last.miles += weight; return; }
+      const path = pl.getPath();
+      const mid = path.getAt(Math.floor(path.getLength() / 2));
+      list.push({ name, miles: weight, lat: mid.lat(), lng: mid.lng() });
+    });
+    onReplaceRoute?.(list);
+    const total = list.reduce((s, t) => s + t.miles, 0);
+    onRouteInfo?.(`Route: ${list.length} trail${list.length > 1 ? 's' : ''}, ${total.toFixed(1)} mi`);
+  }
 
   // Show/hide trail-name labels based on current zoom and active filters.
   const refreshLabels = useCallback(() => {
@@ -187,15 +385,28 @@ function TrailLayer({ activeFilters, findSingletrack, onStatusChange, routeMode,
       marker.setMap(visibleZoom && anyActive ? map : null);
     });
   }, [map]);
-  // Clear highlights when route mode turns off
+  // Clear highlights + snapped-route state when route mode turns off, and wipe
+  // the route list/status so re-entering planning starts clean.
   useEffect(() => {
     if (!routeMode) {
       routePolylinesRef.current.forEach(({ polyline, origColor, origWeight, origOpacity }) => {
         polyline.setOptions({ strokeColor: origColor, strokeWeight: origWeight, strokeOpacity: origOpacity });
       });
       routePolylinesRef.current = [];
+      clearSnappedRoute();
+      onReplaceRoute?.([]);
+      onRouteInfo?.('');
     }
   }, [routeMode]);
+
+  // When the route is cleared from the panel (routeTrails emptied while we still
+  // have endpoints placed), reset the snapped-route visuals to match.
+  useEffect(() => {
+    if ((routeTrails?.length ?? 0) === 0 && routeEndpointsRef.current.length > 0) {
+      clearSnappedRoute();
+      onRouteInfo?.('');
+    }
+  }, [routeTrails]);
 
   useEffect(() => {
     activeFiltersRef.current = activeFilters;
@@ -325,30 +536,10 @@ function TrailLayer({ activeFilters, findSingletrack, onStatusChange, routeMode,
             polyline.__color = style.color;
 
             polyline.addListener('click', e => {
-              // Route planning mode
+              // Route planning mode: capture up to two tap points, then snap a
+              // shortest-path route through the loaded trail-segment graph.
               if (routeModeRef.current) {
-                const trailName = properties.name?.trim() || 'Unnamed Trail';
-                const alreadyInRoute = routeTrailsRef.current.some(t => t.name === trailName);
-                if (alreadyInRoute) {
-                  // Remove from route - reset all polylines with this name
-                  ACTIVITY_KEYS.forEach(act => {
-                    (polylinesRef.current[act] || []).forEach(p => {
-                      if (p.__properties?.name?.trim() === trailName) {
-                        p.setOptions({ strokeColor: p.__color, strokeWeight: p.__origWeight, strokeOpacity: p.__origOpacity });
-                      }
-                    });
-                  });
-                  if (onRemoveFromRoute) onRemoveFromRoute(trailName);
-                } else {
-                  const trail = {
-                    name: trailName,
-                    miles: properties.length_mi_ || 0,
-                    lat: e.latLng.lat(),
-                    lng: e.latLng.lng(),
-                  };
-                  if (onAddToRoute) onAddToRoute(trail);
-                  polyline.setOptions({ strokeColor: '#ffffff', strokeWeight: (style.weight || 2) + 3, strokeOpacity: 1 });
-                }
+                addRoutePoint({ lat: e.latLng.lat(), lng: e.latLng.lng() });
                 return;
               }
               // Close previous
@@ -769,7 +960,7 @@ function RideHistoryLayer({ enabled, refreshKey, onViewRide }) {
   return null;
 }
 
-export default function TrailMap({ activeFilters, findSingletrack, onMapReady, routeMode, onAddToRoute, onRemoveFromRoute, routeTrails, showRideHistory, ridesRefresh, onViewRide }) {
+export default function TrailMap({ activeFilters, findSingletrack, onMapReady, routeMode, onReplaceRoute, onRouteInfo, routeTrails, showRideHistory, ridesRefresh, onViewRide }) {
   const [status, setStatus] = useState({ type: 'idle' });
   return (
     <div className="map-wrapper">
@@ -785,7 +976,7 @@ export default function TrailMap({ activeFilters, findSingletrack, onMapReady, r
         zoomControl={true}
       >
         {onMapReady && <MapController onMapReady={onMapReady} />}
-        <TrailLayer activeFilters={activeFilters} findSingletrack={findSingletrack} onStatusChange={setStatus} routeMode={routeMode} onAddToRoute={onAddToRoute} onRemoveFromRoute={onRemoveFromRoute} routeTrails={routeTrails} />
+        <TrailLayer activeFilters={activeFilters} findSingletrack={findSingletrack} onStatusChange={setStatus} routeMode={routeMode} onReplaceRoute={onReplaceRoute} onRouteInfo={onRouteInfo} routeTrails={routeTrails} />
         <RideHistoryLayer enabled={!!showRideHistory} refreshKey={ridesRefresh} onViewRide={onViewRide} />
       </GoogleMap>
       <div className="map-status">

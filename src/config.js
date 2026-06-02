@@ -10,7 +10,7 @@ export const GRAVEL_SURFACES = new Set(['gravel', 'unpaved', 'compacted', 'fine_
 export const ACTIVITY_CONFIG = {
   hiking: {
     label: 'Hiking',
-    color: '#22c55e',
+    color: '#15803d', // dark green — renders as fine dashes (see getTrailStyle)
     weight: 2,
   },
   mountain_bike: {

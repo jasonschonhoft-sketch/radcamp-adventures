@@ -93,7 +93,7 @@ function SidebarContent({
   onClose, showClose,
   campActive, onToggleCamp, campLoading,
   shopsActive, onToggleShops,
-  routeMode, onToggleRoute, routeTrails,
+  routeMode, onToggleRoute, routeTrails, routeInfo,
   onClearRoute, onRemoveTrail, onOpenInMaps, onShareRoute,
   user, onLogRide, onViewRides, onSignIn,
   showRideHistory, onToggleRideHistory,
@@ -198,9 +198,15 @@ function SidebarContent({
                 <button className="fc-route-note-link" onClick={onShowAllTrails}>Show all trails</button>
               </div>
             )}
-            {routeTrails.length === 0 ? (
-              <div className="fc-route-empty">Tap trails on the map to add them</div>
-            ) : (
+            <div className="fc-route-empty">
+              {routeTrails.length === 0
+                ? 'Tap a start point on a trail, then tap your destination — RadCamp links them along the trail network.'
+                : 'Tap two new points to re-route.'}
+            </div>
+            {routeInfo && (
+              <div style={{ fontSize: '11px', fontWeight: 600, color: '#a3e635', padding: '6px 0' }}>{routeInfo}</div>
+            )}
+            {routeTrails.length > 0 && (
               <>
                 <div className="fc-route-list">
                   {routeTrails.map((t, i) => (
@@ -242,7 +248,7 @@ function SidebarContent({
   );
 }
 
-export default function FloatingControls({ activeFilters, onToggle, findSingletrack, onToggleSingletrack, onShowAllTrails, mapRef, externalCampActive, onCampChange, externalShopsActive, onShopsChange, onRouteModeChange, routeTrails: externalRouteTrails, onRouteTrailsChange, onLogRide, onViewRides, onSignIn, showRideHistory, onToggleRideHistory }) {
+export default function FloatingControls({ activeFilters, onToggle, findSingletrack, onToggleSingletrack, onShowAllTrails, mapRef, externalCampActive, onCampChange, externalShopsActive, onShopsChange, onRouteModeChange, routeTrails: externalRouteTrails, onRouteTrailsChange, routeInfo, onLogRide, onViewRides, onSignIn, showRideHistory, onToggleRideHistory }) {
   const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [locating, setLocating] = useState(false);
@@ -482,7 +488,7 @@ export default function FloatingControls({ activeFilters, onToggle, findSingletr
     campActive, onToggleCamp: handleCamp, campLoading,
     shopsActive, onToggleShops: handleShops,
     routeMode, onToggleRoute: () => { const next = !routeMode; setRouteMode(next); if (onRouteModeChange) onRouteModeChange(next); },
-    routeTrails, onClearRoute: handleClearRoute,
+    routeTrails, routeInfo, onClearRoute: handleClearRoute,
     onRemoveTrail: handleRemoveTrail,
     onOpenInMaps: handleOpenInMaps,
     onShareRoute: handleShareRoute,

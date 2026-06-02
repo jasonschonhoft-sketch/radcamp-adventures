@@ -53,24 +53,16 @@ const MODAL_ACTIVITIES = [
 ];
 
 function WelcomeModal({ onSelect, onCamp, onShops }) {
-  const [selected, setSelected] = React.useState([]);
+  // Camp/shop are opt-in overlays applied at the moment a card is tapped.
   const [withCamp, setWithCamp] = React.useState(false);
   const [withShops, setWithShops] = React.useState(false);
 
-  function toggleActivity(key) {
-    setSelected(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
-  }
-
-  function handleGo() {
-    if (selected.length === 0) {
-      onSelect(null);
-    } else if (selected.length === 1) {
-      onSelect(selected[0]);
-    } else {
-      onSelect(null, selected);
-    }
-    if (withCamp && onCamp) onCamp(true);
-    if (withShops && onShops) onShops(true);
+  // Tapping an activity enters immediately with just that activity, carrying
+  // whatever camp/shop overlay choices are checked. No multi-select, no button.
+  function enterWith(key) {
+    if (onCamp) onCamp(withCamp);
+    if (onShops) onShops(withShops);
+    onSelect(key);
   }
 
   return (
@@ -79,20 +71,19 @@ function WelcomeModal({ onSelect, onCamp, onShops }) {
         <div className="welcome-header">
           <img src="/logo.svg" alt="RadCamp" className="welcome-logo" />
           <h2 className="welcome-title">What are you looking for?</h2>
-          <p className="welcome-sub">Select one or more — find your next Colorado adventure!</p>
+          <p className="welcome-sub">Tap an activity to start exploring Colorado.</p>
           <p className="welcome-ai-note">✨ AI-powered trail descriptions on every trail</p>
         </div>
         <div className="welcome-grid">
           {MODAL_ACTIVITIES.map(({ key }) => {
             const cfg = ACTIVITY_CONFIG[key];
             if (!cfg) return null;
-            const active = selected.includes(key);
             return (
               <button
                 key={key}
-                className={`welcome-card${active ? ' selected' : ''}`}
+                className="welcome-card"
                 style={{ '--card-color': cfg.color }}
-                onClick={() => toggleActivity(key)}
+                onClick={() => enterWith(key)}
               >
                 <div className="welcome-card-dot" />
                 <span className="welcome-card-label">{cfg.label}</span>
@@ -108,9 +99,6 @@ function WelcomeModal({ onSelect, onCamp, onShops }) {
           <input type="checkbox" checked={withShops} onChange={e => setWithShops(e.target.checked)} />
           Also show nearby shops
         </label>
-        <button className="welcome-go" onClick={handleGo}>
-          Let's Go! →
-        </button>
       </div>
     </div>
   );
@@ -202,6 +190,7 @@ export default function App() {
   const [shopsActive, setShopsActive] = useState(false);
   const [routeMode, setRouteMode] = useState(false);
   const [routeTrails, setRouteTrails] = useState([]);
+  const [routeInfo, setRouteInfo] = useState(''); // status text for the snapped-route flow
   // Ride logging
   const [logRideOpen, setLogRideOpen] = useState(false);
   const [ridesPanelOpen, setRidesPanelOpen] = useState(false);
@@ -211,18 +200,7 @@ export default function App() {
   const [showRideHistory, setShowRideHistory] = useState(true); // ride pins on main map (ON by default)
   const [focusRideId, setFocusRideId] = useState(null); // ride to open in detail (from a map pin)
 
-  const handleAddToRoute = useCallback((trail) => {
-    setRouteTrails(prev => {
-      if (prev.find(t => t.name === trail.name)) return prev;
-      return [...prev, trail];
-    });
-  }, []);
-
-  const handleRemoveFromRoute = useCallback((name) => {
-    setRouteTrails(prev => prev.filter(t => t.name !== name));
-  }, []);
   const mapRef = useRef(null);
-  const addToRouteRef = useRef(null);
 
   const toggleFilter = useCallback((activity) => {
     // Single-select: tapping an activity makes it the ONLY active one.
@@ -242,13 +220,8 @@ export default function App() {
     });
   }, []);
 
-  function handleModalSelect(activity, multiKeys) {
-    if (multiKeys && Array.isArray(multiKeys)) {
-      const filters = Object.fromEntries(ACTIVITY_KEYS.map(k => [k, multiKeys.includes(k)]));
-      setActiveFilters(filters);
-    } else {
-      setActiveFilters(makeFilters(activity));
-    }
+  function handleModalSelect(activity) {
+    setActiveFilters(makeFilters(activity));
     setModalVisible(false);
   }
 
@@ -324,13 +297,14 @@ export default function App() {
             onRouteModeChange={setRouteMode}
             routeTrails={routeTrails}
             onRouteTrailsChange={setRouteTrails}
+            routeInfo={routeInfo}
             onLogRide={() => { setEditRide(null); setLogRideOpen(true); }}
             onViewRides={() => setRidesPanelOpen(true)}
             onSignIn={() => setAuthModalOpen(true)}
             showRideHistory={showRideHistory}
             onToggleRideHistory={() => setShowRideHistory(v => !v)}
           />
-          <TrailMap activeFilters={activeFilters} findSingletrack={findSingletrack} onMapReady={handleMapReady} routeMode={routeMode} onAddToRoute={handleAddToRoute} onRemoveFromRoute={handleRemoveFromRoute} routeTrails={routeTrails} showRideHistory={showRideHistory} ridesRefresh={ridesRefresh} onViewRide={(id) => { setFocusRideId(id); setRidesPanelOpen(true); }} />
+          <TrailMap activeFilters={activeFilters} findSingletrack={findSingletrack} onMapReady={handleMapReady} routeMode={routeMode} onReplaceRoute={setRouteTrails} onRouteInfo={setRouteInfo} routeTrails={routeTrails} showRideHistory={showRideHistory} ridesRefresh={ridesRefresh} onViewRide={(id) => { setFocusRideId(id); setRidesPanelOpen(true); }} />
           <WeatherWidget mapRef={mapRef} />
           <div className={`singletrack-banner${findSingletrack ? ' visible' : ''}`} role="status" aria-hidden={!findSingletrack}>
             <span className="singletrack-banner-text">🔍 Showing singletrack only</span>
