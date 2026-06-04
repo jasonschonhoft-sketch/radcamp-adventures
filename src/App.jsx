@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { APIProvider } from '@vis.gl/react-google-maps';
+import { Analytics } from '@vercel/analytics/react';
 import TrailMap from './components/TrailMap';
 import FloatingControls from './components/FloatingControls';
 import SearchBar from './components/SearchBar';
@@ -268,6 +269,7 @@ export default function App() {
   return (
     <AuthProvider>
     <APIProvider apiKey={apiKey}>
+      <Analytics />
       {modalVisible && <WelcomeModal onSelect={handleModalSelect} onCamp={setCampActive} onShops={setShopsActive} />}
       <div className="app">
         <header className="app-header">
