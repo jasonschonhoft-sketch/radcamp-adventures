@@ -277,7 +277,7 @@ export default function App() {
           </div>
           <SearchBar onPlaceSelect={handlePlaceSelect} />
           <div className="header-right">
-            <span className="header-tagline">✨ AI-Powered Colorado Trail Explorer</span>
+            <span className="header-tagline">✨ AI-Powered Colorado Adventure Map</span>
             <HeaderAuth />
           </div>
         </header>
