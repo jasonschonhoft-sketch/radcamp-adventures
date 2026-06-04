@@ -1,9 +1,28 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Map as GoogleMap, Marker } from '@vis.gl/react-google-maps';
-import { formatRideDate, signedUrlsFor, deleteRide, COLORADO_CENTER } from '../lib/rides';
+import { Map as GoogleMap, Marker, useMap } from '@vis.gl/react-google-maps';
+import { formatRideDate, signedUrlsFor, deleteRide, trackToLines, COLORADO_CENTER } from '../lib/rides';
 
-// Read-only mini map showing the ride's pins.
-function PinsMap({ pins }) {
+// Draws the ride's recorded GPX track as a cyan polyline and fits to it.
+function TrackOverlay({ track }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!map) return;
+    const lines = trackToLines(track);
+    if (!lines.length) return;
+    const bounds = new google.maps.LatLngBounds();
+    const polylines = lines.map(coords => {
+      const path = coords.map(([lng, lat]) => ({ lat, lng }));
+      path.forEach(pt => bounds.extend(pt));
+      return new google.maps.Polyline({ path, strokeColor: '#06b6d4', strokeOpacity: 0.95, strokeWeight: 4, map });
+    });
+    if (!bounds.isEmpty()) map.fitBounds(bounds);
+    return () => polylines.forEach(p => p.setMap(null));
+  }, [map, track]);
+  return null;
+}
+
+// Read-only mini map showing the ride's pins and recorded track.
+function PinsMap({ pins, track }) {
   const center = pins[0] ? { lat: pins[0].lat, lng: pins[0].lng } : COLORADO_CENTER;
   return (
     <div className="ride-detail-map">
@@ -18,6 +37,7 @@ function PinsMap({ pins }) {
         {pins.map((p, i) => (
           <Marker key={i} position={{ lat: p.lat, lng: p.lng }} label={String(i + 1)} title={p.label || `Pin ${i + 1}`} />
         ))}
+        {track && <TrackOverlay track={track} />}
       </GoogleMap>
     </div>
   );
@@ -122,7 +142,7 @@ export default function RideDetail({ ride, onClose, onEdit, onDeleted }) {
           </div>
         )}
 
-        {pins.length > 0 && <PinsMap pins={pins} />}
+        {(pins.length > 0 || ride.track_geojson) && <PinsMap pins={pins} track={ride.track_geojson} />}
 
         {error && <div className="auth-error" style={{ marginTop: 12 }}>{error}</div>}
 

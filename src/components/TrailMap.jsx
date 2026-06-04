@@ -3,7 +3,7 @@ import { Map as GoogleMap, useMap } from '@vis.gl/react-google-maps';
 import { ACTIVITY_CONFIG, ACTIVITY_KEYS, COTREX_URL, PAVED_SURFACES } from '../config';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { RIDE_PIN_COLORS, formatRideDate, signedUrlsFor, photoForPin, matchedPhotoForPin } from '../lib/rides';
+import { RIDE_PIN_COLORS, formatRideDate, signedUrlsFor, photoForPin, matchedPhotoForPin, trackToLines } from '../lib/rides';
 
 const MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
@@ -852,6 +852,7 @@ function RideHistoryLayer({ enabled, refreshKey, onViewRide }) {
   const map = useMap();
   const { user } = useAuth();
   const entriesRef = useRef([]);          // { ride, pin, color, mapPhoto, popupPhoto, position, el, overlay, state }
+  const trackPolylinesRef = useRef([]);   // recorded-ride GPX tracks drawn as polylines
   const infoWindowRef = useRef(null);
   const idleListenerRef = useRef(null);
   const reqIdRef = useRef(0);
@@ -861,6 +862,8 @@ function RideHistoryLayer({ enabled, refreshKey, onViewRide }) {
   function clearOverlays() {
     entriesRef.current.forEach(e => { try { e.overlay.setMap(null); } catch { /* noop */ } });
     entriesRef.current = [];
+    trackPolylinesRef.current.forEach(p => { try { p.setMap(null); } catch { /* noop */ } });
+    trackPolylinesRef.current = [];
     if (infoWindowRef.current) infoWindowRef.current.close();
     if (idleListenerRef.current) {
       google.maps.event.removeListener(idleListenerRef.current);
@@ -944,7 +947,7 @@ function RideHistoryLayer({ enabled, refreshKey, onViewRide }) {
       try {
         const { data, error } = await supabase
           .from('rides')
-          .select('id,title,ride_date,area_name,pins,ride_photos(id,storage_path,caption)')
+          .select('id,title,ride_date,area_name,pins,track_geojson,ride_photos(id,storage_path,caption)')
           .eq('user_id', user.id)
           .order('ride_date', { ascending: false });
         if (error) throw error;
@@ -958,6 +961,20 @@ function RideHistoryLayer({ enabled, refreshKey, onViewRide }) {
         (data || []).forEach((ride, rideIdx) => {
           const color = RIDE_PIN_COLORS[rideIdx % RIDE_PIN_COLORS.length];
           const photos = ride.ride_photos || [];
+
+          // Draw the recorded GPX track (if any) as a polyline in the ride's
+          // color. Clicking it opens the ride detail.
+          trackToLines(ride.track_geojson).forEach(coords => {
+            if (coords.length < 2) return;
+            const polyline = new google.maps.Polyline({
+              path: coords.map(([lng, lat]) => ({ lat, lng })),
+              strokeColor: color, strokeOpacity: 0.9, strokeWeight: 3.5,
+              map, clickable: true, zIndex: 150,
+            });
+            polyline.addListener('click', () => onViewRideRef.current?.(ride.id));
+            trackPolylinesRef.current.push(polyline);
+          });
+
           (Array.isArray(ride.pins) ? ride.pins : []).forEach(pin => {
             if (!Number.isFinite(pin?.lat) || !Number.isFinite(pin?.lng)) return;
             const position = new google.maps.LatLng(pin.lat, pin.lng);

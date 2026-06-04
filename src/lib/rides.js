@@ -101,6 +101,105 @@ export async function extractPhotoExif(file) {
   return result;
 }
 
+// Great-circle distance in meters between two [lng, lat] points (haversine).
+function haversineMeters([lng1, lat1], [lng2, lat2]) {
+  const toRad = d => (d * Math.PI) / 180;
+  const R = 6371000; // Earth radius in meters
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const s = Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+
+// Parse a GPX file (e.g. a COTREX-recorded ride) into a GeoJSON track plus
+// some metadata. Returns null if the text isn't valid GPX or has no usable
+// points. Fully client-side; never throws. Reads <trkseg>/<trkpt> tracks (each
+// segment becomes one line), falling back to <rtept> route points. The geometry
+// is stored as-is in rides.track_geojson and rendered as a polyline.
+export function parseGpxToTrack(gpxText) {
+  if (!gpxText || typeof gpxText !== 'string') return null;
+  let doc;
+  try {
+    doc = new DOMParser().parseFromString(gpxText, 'application/xml');
+  } catch {
+    return null;
+  }
+  if (doc.getElementsByTagName('parsererror').length) return null;
+
+  const readPts = (collection) => {
+    const coords = [];
+    for (const pt of Array.from(collection)) {
+      const lat = parseFloat(pt.getAttribute('lat'));
+      const lng = parseFloat(pt.getAttribute('lon'));
+      if (Number.isFinite(lat) && Number.isFinite(lng)) coords.push([lng, lat]);
+    }
+    return coords;
+  };
+
+  // Each <trkseg> → one line; fall back to route points, then loose trackpoints.
+  const lines = [];
+  for (const seg of Array.from(doc.getElementsByTagName('trkseg'))) {
+    const c = readPts(seg.getElementsByTagName('trkpt'));
+    if (c.length >= 2) lines.push(c);
+  }
+  if (!lines.length) {
+    const rte = readPts(doc.getElementsByTagName('rtept'));
+    if (rte.length >= 2) lines.push(rte);
+    else {
+      const loose = readPts(doc.getElementsByTagName('trkpt'));
+      if (loose.length >= 2) lines.push(loose);
+    }
+  }
+  if (!lines.length) return null;
+
+  let meters = 0;
+  for (const line of lines) {
+    for (let i = 1; i < line.length; i++) meters += haversineMeters(line[i - 1], line[i]);
+  }
+
+  const trk = doc.getElementsByTagName('trk')[0];
+  const name = (
+    trk?.getElementsByTagName('name')[0]?.textContent ||
+    doc.getElementsByTagName('name')[0]?.textContent ||
+    ''
+  ).trim();
+
+  const firstTrkpt = doc.getElementsByTagName('trkpt')[0];
+  const timeText = (firstTrkpt?.getElementsByTagName('time')[0]
+    || doc.getElementsByTagName('time')[0])?.textContent?.trim();
+  let startDateISO = null;
+  if (timeText) {
+    const d = new Date(timeText);
+    if (!isNaN(d.getTime())) {
+      const off = d.getTimezoneOffset();
+      startDateISO = new Date(d.getTime() - off * 60000).toISOString().slice(0, 10);
+    }
+  }
+
+  const geometry = lines.length === 1
+    ? { type: 'LineString', coordinates: lines[0] }
+    : { type: 'MultiLineString', coordinates: lines };
+
+  return {
+    geometry,
+    distanceMiles: meters / 1609.344,
+    pointCount: lines.reduce((s, l) => s + l.length, 0),
+    name,
+    startDateISO,
+  };
+}
+
+// Normalize a track_geojson value (geometry, or a Feature wrapping one) to an
+// array of coordinate lines ([[lng,lat], …]). Returns [] for anything invalid.
+export function trackToLines(track) {
+  const geom = track?.type === 'Feature' ? track.geometry : track;
+  if (!geom?.coordinates) return [];
+  if (geom.type === 'LineString') return [geom.coordinates];
+  if (geom.type === 'MultiLineString') return geom.coordinates;
+  return [];
+}
+
 // Sanitize a filename to safe storage characters.
 function safeName(name) {
   return String(name || 'photo.jpg').replace(/[^a-zA-Z0-9._-]/g, '_');

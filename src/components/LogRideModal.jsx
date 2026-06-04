@@ -1,14 +1,35 @@
 import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Map as GoogleMap, Marker } from '@vis.gl/react-google-maps';
+import { Map as GoogleMap, Marker, useMap } from '@vis.gl/react-google-maps';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import {
-  resizeImage, photoPath, todayISO, formatRideDate, signedUrlsFor, extractPhotoExif, COLORADO_CENTER,
+  resizeImage, photoPath, todayISO, formatRideDate, signedUrlsFor, extractPhotoExif,
+  parseGpxToTrack, trackToLines, COLORADO_CENTER,
 } from '../lib/rides';
 
+// Draws an imported GPX track as a cyan polyline and fits the map to it.
+function TrackOverlay({ track }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!map) return;
+    const lines = trackToLines(track);
+    if (!lines.length) return;
+    const bounds = new google.maps.LatLngBounds();
+    const polylines = lines.map(coords => {
+      const path = coords.map(([lng, lat]) => ({ lat, lng }));
+      path.forEach(pt => bounds.extend(pt));
+      return new google.maps.Polyline({ path, strokeColor: '#06b6d4', strokeOpacity: 0.95, strokeWeight: 4, map });
+    });
+    if (!bounds.isEmpty()) map.fitBounds(bounds);
+    return () => polylines.forEach(p => p.setMap(null));
+  }, [map, track]);
+  return null;
+}
+
 // Interactive pin-drop map. Tap to drop a pin; pins come from / go to parent.
-function PinMap({ pins, onAddPin, center }) {
+// When a GPX track is loaded it's drawn on top and the map fits to it.
+function PinMap({ pins, onAddPin, center, track }) {
   return (
     <div className="ride-pinmap">
       <GoogleMap
@@ -26,6 +47,7 @@ function PinMap({ pins, onAddPin, center }) {
         {pins.map((p, i) => (
           <Marker key={i} position={{ lat: p.lat, lng: p.lng }} label={String(i + 1)} />
         ))}
+        {track && <TrackOverlay track={track} />}
       </GoogleMap>
     </div>
   );
@@ -43,6 +65,8 @@ export default function LogRideModal({ open, onClose, onSaved, mapRef, editRide 
   const [duration, setDuration] = useState('');
   const [elevation, setElevation] = useState('');
   const [pins, setPins] = useState([]);
+  const [track, setTrack] = useState(null);      // GeoJSON geometry from an imported GPX
+  const [trackInfo, setTrackInfo] = useState(''); // status line under the GPX picker
   // photos: { kind:'new', file, url } | { kind:'existing', photo, url }
   const [photos, setPhotos] = useState([]);
   const [removedPaths, setRemovedPaths] = useState([]); // existing storage_paths to delete on save
@@ -80,6 +104,8 @@ export default function LogRideModal({ open, onClose, onSaved, mapRef, editRide 
       setDuration(editRide.duration_minutes ?? '');
       setElevation(editRide.elevation_gain_ft ?? '');
       setPins(Array.isArray(editRide.pins) ? editRide.pins.map(p => ({ ...p, label: p.label || '' })) : []);
+      setTrack(editRide.track_geojson || null);
+      setTrackInfo(editRide.track_geojson ? 'Recorded track attached.' : '');
       // Load existing photos as signed-URL thumbnails.
       const existing = editRide.photos || [];
       setPhotos(existing.map(photo => ({ kind: 'existing', photo, url: '' })));
@@ -98,6 +124,8 @@ export default function LogRideModal({ open, onClose, onSaved, mapRef, editRide 
       setDuration('');
       setElevation('');
       setPins([]);
+      setTrack(null);
+      setTrackInfo('');
       setPhotos([]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -161,6 +189,38 @@ export default function LogRideModal({ open, onClose, onSaved, mapRef, editRide 
     }
   }
 
+  // Import a COTREX-recorded (or any) GPX file: parse to a track, draw it, and
+  // auto-fill the title / date / distance fields when they're still empty.
+  async function handleGpx(e) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file
+    if (!file) return;
+    setError('');
+    try {
+      const text = await file.text();
+      const parsed = parseGpxToTrack(text);
+      if (!parsed) {
+        setTrackInfo('');
+        setError("Couldn't read a track from that GPX file.");
+        return;
+      }
+      setTrack(parsed.geometry);
+      const miles = parsed.distanceMiles;
+      setTrackInfo(`✓ Imported ${parsed.pointCount.toLocaleString()} track points · ${miles.toFixed(1)} mi`);
+      // Only fill fields the user hasn't set meaningfully yet.
+      setDistance(prev => (prev === '' ? miles.toFixed(1) : prev));
+      if (parsed.startDateISO) setRideDate(prev => (!prev || prev === todayISO() ? parsed.startDateISO : prev));
+      if (parsed.name) {
+        setTitle(prev => (!prev.trim() || prev.startsWith('Ride on ') ? parsed.name : prev));
+      }
+    } catch (err) {
+      console.error('[LogRide] GPX import failed:', err);
+      setError("Couldn't read that GPX file.");
+    }
+  }
+
+  function clearTrack() { setTrack(null); setTrackInfo(''); }
+
   function removePhoto(idx) {
     setPhotos(prev => {
       const target = prev[idx];
@@ -194,6 +254,7 @@ export default function LogRideModal({ open, onClose, onSaved, mapRef, editRide 
         duration_minutes: duration === '' ? null : Number(duration),
         elevation_gain_ft: elevation === '' ? null : Number(elevation),
         area_name: areaName.trim() || null,
+        track_geojson: track || null,
         pins: pins.map(p => ({
           lat: p.lat,
           lng: p.lng,
@@ -300,8 +361,27 @@ export default function LogRideModal({ open, onClose, onSaved, mapRef, editRide 
           </div>
 
           <div className="auth-field">
+            <span className="auth-label">Recorded track (GPX)</span>
+            <input
+              className="ride-file"
+              type="file"
+              accept=".gpx,application/gpx+xml,application/xml,text/xml"
+              onChange={handleGpx}
+            />
+            {trackInfo && (
+              <div className="ride-gps-note">
+                {trackInfo}
+                {track && <button type="button" className="fc-route-note-link" style={{ marginLeft: 8 }} onClick={clearTrack}>Remove</button>}
+              </div>
+            )}
+            <span className="auth-hint" style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
+              Export a recorded ride from COTREX as GPX, then pick it here.
+            </span>
+          </div>
+
+          <div className="auth-field">
             <span className="auth-label">Pins — tap the map to drop a location</span>
-            <PinMap pins={pins} onAddPin={addPin} center={mapCenter} />
+            <PinMap pins={pins} onAddPin={addPin} center={mapCenter} track={track} />
             {pins.length > 0 && (
               <div className="ride-pin-list">
                 {pins.map((p, i) => (
