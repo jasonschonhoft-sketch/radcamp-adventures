@@ -200,6 +200,25 @@ export function trackToLines(track) {
   return [];
 }
 
+// Build a track geometry from an array of coordinate lines: a LineString for a
+// single line, MultiLineString for several. Returns null if there are none.
+export function linesToTrack(lines) {
+  const usable = (lines || []).filter(l => Array.isArray(l) && l.length >= 2);
+  if (!usable.length) return null;
+  return usable.length === 1
+    ? { type: 'LineString', coordinates: usable[0] }
+    : { type: 'MultiLineString', coordinates: usable };
+}
+
+// Total length in miles across every segment of a track_geojson value.
+export function trackDistanceMiles(track) {
+  let meters = 0;
+  for (const line of trackToLines(track)) {
+    for (let i = 1; i < line.length; i++) meters += haversineMeters(line[i - 1], line[i]);
+  }
+  return meters / 1609.344;
+}
+
 // Sanitize a filename to safe storage characters.
 function safeName(name) {
   return String(name || 'photo.jpg').replace(/[^a-zA-Z0-9._-]/g, '_');

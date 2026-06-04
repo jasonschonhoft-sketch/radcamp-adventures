@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import {
   resizeImage, photoPath, todayISO, formatRideDate, signedUrlsFor, extractPhotoExif,
-  parseGpxToTrack, trackToLines, COLORADO_CENTER,
+  parseGpxToTrack, trackToLines, linesToTrack, trackDistanceMiles, COLORADO_CENTER,
 } from '../lib/rides';
 
 // Draws an imported GPX track as a cyan polyline and fits the map to it.
@@ -189,30 +189,41 @@ export default function LogRideModal({ open, onClose, onSaved, mapRef, editRide 
     }
   }
 
-  // Import a COTREX-recorded (or any) GPX file: parse to a track, draw it, and
-  // auto-fill the title / date / distance fields when they're still empty.
+  // Import one or more COTREX-recorded (or any) GPX files. Each file's track is
+  // appended to the ride as a separate segment, so several recordings can live on
+  // one ride; distance is totaled across all segments. Auto-fills title/date from
+  // the first file and distance from the running total, only when not already set.
   async function handleGpx(e) {
-    const file = e.target.files?.[0];
-    e.target.value = ''; // allow re-selecting the same file
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    e.target.value = ''; // allow re-selecting the same file(s)
+    if (!files.length) return;
     setError('');
     try {
-      const text = await file.text();
-      const parsed = parseGpxToTrack(text);
-      if (!parsed) {
-        setTrackInfo('');
-        setError("Couldn't read a track from that GPX file.");
+      const parsed = [];
+      for (const file of files) {
+        const text = await file.text();
+        const p = parseGpxToTrack(text);
+        if (p) parsed.push(p);
+      }
+      if (!parsed.length) {
+        setError("Couldn't read a track from those GPX file(s).");
         return;
       }
-      setTrack(parsed.geometry);
-      const miles = parsed.distanceMiles;
-      setTrackInfo(`✓ Imported ${parsed.pointCount.toLocaleString()} track points · ${miles.toFixed(1)} mi`);
-      // Only fill fields the user hasn't set meaningfully yet.
-      setDistance(prev => (prev === '' ? miles.toFixed(1) : prev));
-      if (parsed.startDateISO) setRideDate(prev => (!prev || prev === todayISO() ? parsed.startDateISO : prev));
-      if (parsed.name) {
-        setTitle(prev => (!prev.trim() || prev.startsWith('Ride on ') ? parsed.name : prev));
-      }
+      // Append the new tracks' segments to any track already loaded.
+      const merged = linesToTrack([
+        ...trackToLines(track),
+        ...parsed.flatMap(p => trackToLines(p.geometry)),
+      ]);
+      setTrack(merged);
+
+      const totalMiles = trackDistanceMiles(merged);
+      const segCount = trackToLines(merged).length;
+      setTrackInfo(`✓ ${segCount} track${segCount === 1 ? '' : 's'} · ${totalMiles.toFixed(1)} mi total`);
+      setDistance(totalMiles.toFixed(1)); // the track is authoritative for distance
+
+      const first = parsed[0];
+      if (first.startDateISO) setRideDate(prev => (!prev || prev === todayISO() ? first.startDateISO : prev));
+      if (first.name) setTitle(prev => (!prev.trim() || prev.startsWith('Ride on ') ? first.name : prev));
     } catch (err) {
       console.error('[LogRide] GPX import failed:', err);
       setError("Couldn't read that GPX file.");
@@ -366,16 +377,17 @@ export default function LogRideModal({ open, onClose, onSaved, mapRef, editRide 
               className="ride-file"
               type="file"
               accept=".gpx,application/gpx+xml,application/xml,text/xml"
+              multiple
               onChange={handleGpx}
             />
             {trackInfo && (
               <div className="ride-gps-note">
                 {trackInfo}
-                {track && <button type="button" className="fc-route-note-link" style={{ marginLeft: 8 }} onClick={clearTrack}>Remove</button>}
+                {track && <button type="button" className="fc-route-note-link" style={{ marginLeft: 8 }} onClick={clearTrack}>Remove all</button>}
               </div>
             )}
             <span className="auth-hint" style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
-              Export a recorded ride from COTREX as GPX, then pick it here.
+              Export recorded rides from COTREX as GPX. Pick several at once (or add more later) to combine them into one ride.
             </span>
           </div>
 
